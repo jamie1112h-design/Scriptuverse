@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriptuverse &ndash; Wisdom Instruments</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="scriptuverse-shared.css">
+<style>
+  /* ── Visual identity inherited from Human Mastery per ScriptBDL Decision 11,
+     with sizing corrected against the BIS's own explicit rules (Section 2.3):
+     wordmark is 36px per rule, not the 15px used in the first pass -- that
+     was a real error, not a style choice. HM's action colour (#0000FF, pure
+     blue) is also a BIS rule, not something this first pass applied at all --
+     used here sparingly, on CTAs and row labels, per that rule's own scope.
+
+     Revision notes (this pass, per Jamie's review):
+       - Wordmark spelling bug fixed. The rv-merge idea only ever meant tight
+         kerning on the existing u/v letters, not inserting extra letters --
+         the first pass literally corrupted the word. Fixed structurally.
+       - Type scale raised throughout. This audience skews 30s/40s/elderly,
+         not the tight mono-label sizes that read fine to a 20-something.
+       - Font-family count reduced before the italic tagline: header logo is
+         now the only sans element up top: wordmark and tagline are both
+         serif, so there are two families, not three-plus-mono, before the
+         eye reaches the italics.
+
+     FONT SYSTEM (ScriptBDL Decision 105): Crimson Pro for the wordmark,
+     PT Serif for all other serif use, Google Sans for all sans/mono use.
+     Playfair Display and Share Tech Mono are retired platform-wide.
+       - "Live at Launch" label removed -- it ages out fast, per Jamie's note.
+       - Each tile is now a native <details>/<summary> disclosure -- closer
+         to the BM/HM dropdown pattern Jamie referenced. No JavaScript; this
+         is browser-native HTML, consistent with "shell only, no engine yet."
+       - In-development divider redesigned with an ornamental centre mark,
+         since the original was a plain label-plus-line.
+
+     STATUS: still a visual shell. No auth, no persistence, no Edge Function
+     calls, no working instrument links.
+
+     Root tokens, box-sizing reset, and base html/body rules now live in
+     scriptuverse-shared.css -- removed from here to avoid a second,
+     divergence-prone copy. This page's own <style> block below contains
+     only what's genuinely specific to the front door. ── */
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 700px 450px at 10% 5%,  rgba(176,120,64,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 500px 400px at 88% 85%, rgba(184,150,90,0.06) 0%, transparent 60%);
+  }
+
+  /* ── HERO -- this page has no site-header (front door doesn't need one;
+     interior instrument pages will carry their own, per Jamie's note).
+     Top padding restored here since the header isn't there to carry any
+     of that opening visual weight anymore. ── */
+  .hero {
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: 64px 24px 44px;
+    border-bottom: 1px solid rgba(155,120,65,0.16);
+  }
+  .hero::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+    width: 72px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  /* Wordmark: correctly spelled "Scriptuverse" throughout -- the only
+     flourish is tight kerning on the existing u/v pair, not new letters. */
+  .wordmark {
+    font-family: 'Crimson Pro', serif;
+    font-size: 72px; font-weight: 400;
+    color: var(--accent-deep);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+  .wordmark .uv { letter-spacing: 1px; }
+  @media (max-width: 560px) {
+    .wordmark { font-size: 40px; }
+  }
+
+  /* Value-proposition headline -- the "eye goes here first" line, per
+     Jamie's note, styled after HM's own blue headline convention
+     (BIS 2.3: HM action colour is pure blue, used on headlines). */
+  .value-prop {
+    font-family: 'PT Serif', serif;
+    font-size: 27px; font-weight: 700;
+    color: var(--blue);
+    letter-spacing: -0.2px;
+    line-height: 1.3;
+    max-width: 780px; margin: 0 auto 18px;
+    white-space: nowrap;
+  }
+  .value-prop.resolved {
+    color: var(--accent-deep);
+  }
+  @media (max-width: 780px) {
+    .value-prop { font-size: 22px; white-space: normal; }
+  }
+  @media (max-width: 560px) {
+    .value-prop { font-size: 19px; }
+  }
+
+  .hero-line {
+    font-family: 'PT Serif', serif;
+    font-size: 19px; font-weight: 400;
+    color: var(--text-dim);
+    max-width: 560px; margin: 0 auto 4px;
+  }
+  .hero-line:last-of-type { margin-bottom: 22px; }
+
+  .badge-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; padding: 7px 16px; border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .badge-tier {
+    background: rgba(176,120,64,0.10);
+    font-size: 16px; color: var(--accent-deep);
+    border: 0.5px solid rgba(176,120,64,0.35);
+  }
+
+  /* ── EMAIL CTA -- disabled inputs/buttons deliberately: this is still
+     the visual shell, no signup logic wired in yet. ── */
+  .email-cta {
+    max-width: 460px; margin: 0 auto;
+  }
+  .email-cta-label {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 17px; color: var(--blue);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .email-cta-label.label-error, .email-cta-label.label-attention {
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .email-cta-label.label-confirmed {
+    color: var(--text-dim);
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .email-cta-label.label-confirmed.veteran {
+    font-weight: 400;
+  }
+  .email-cta-input-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .email-input {
+    flex: 1; min-width: 200px;
+    font-family: 'PT Serif', serif; font-size: 17px;
+    padding: 13px 16px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(155,120,65,0.28);
+    border-radius: 5px;
+    color: var(--ink);
+  }
+  .email-cta-button {
+    font-family: 'PT Serif', serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--parchment);
+    background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+    border: 1px solid var(--accent-deep);
+    border-radius: 5px;
+    padding: 13px 22px;
+    display: inline-flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .email-cta-button svg { width: 14px; height: 14px; }
+  .email-input:disabled, .email-cta-button:disabled {
+    cursor: not-allowed;
+  }
+  .email-cta-fine-print {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 16px; color: var(--text-faint);
+    letter-spacing: 0.4px;
+  }
+  .email-cta-fine-print.fine-print-attention {
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .email-cta-fine-print.fine-print-confirmed {
+    color: var(--text-faint);
+    font-weight: 700;
+  }
+  .email-cta-fine-print.fine-print-confirmed.veteran {
+    font-weight: 400;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    position: relative; z-index: 1;
+    max-width: 920px; margin: 0 auto; padding: 48px 24px 40px;
+  }
+
+  /* ── Ornamental divider for the In Development row -- a centred mark
+     rather than a plain label-and-line. ── */
+  .ornamental-divider {
+    display: flex; align-items: center; justify-content: center;
+    gap: 18px;
+    margin: 8px 0 28px;
+  }
+  .ornamental-divider .line {
+    flex: 1; height: 1px; max-width: 200px;
+    background: linear-gradient(90deg, transparent, rgba(176,120,64,0.45));
+  }
+  .ornamental-divider .line.right {
+    background: linear-gradient(90deg, rgba(176,120,64,0.45), transparent);
+  }
+  .ornamental-divider .mark {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent-deep);
+    display: flex; align-items: center; gap: 10px;
+    white-space: nowrap;
+  }
+  .ornamental-divider .diamond {
+    width: 7px; height: 7px; background: var(--accent);
+    transform: rotate(45deg);
+  }
+
+  /* ── INSTRUMENT GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 20px;
+  }
+  .grid.top { margin-bottom: 48px; }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  /* Tiles are native <details> disclosures -- click the header row to
+     expand, per the BM/HM dropdown pattern. */
+  .tile {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    backdrop-filter: blur(3px);
+    transition: border-color 0.2s;
+  }
+  .tile[open], .tile:hover { border-color: var(--card-focus); }
+  .tile.is-pending { opacity: 0.62; }
+
+  .tile summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .tile summary::-webkit-details-marker { display: none; }
+  .tile.tile-static summary { cursor: default; }
+
+  .tile-icon {
+    width: 30px; height: 30px; flex-shrink: 0;
+    color: var(--accent);
+  }
+  .tile.is-pending .tile-icon { color: var(--text-faint); }
+
+  .tile-headline { flex: 1; min-width: 0; }
+
+  .tile-eyebrow {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; color: var(--accent-deep);
+    letter-spacing: 1.2px; margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .tile.is-pending .tile-eyebrow { color: var(--text-faint); }
+
+  .tile-name {
+    font-family: 'PT Serif', serif;
+    font-size: 27px; font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .tile.is-pending .tile-name { color: var(--text-dim); }
+
+  .tile-body {
+    padding: 0 24px 24px 70px;
+  }
+  .tile-desc {
+    font-family: 'PT Serif', serif;
+    font-size: 18px; font-weight: 400;
+    color: var(--text-mid); line-height: 1.65;
+    margin-bottom: 20px;
+  }
+  .tile-cta {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--blue);
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 700;
+  }
+  .tile-cta svg { width: 13px; height: 13px; }
+  .tile.is-pending .tile-cta { color: var(--text-faint); }
+
+  .status-corner {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  .status-corner.pending {
+    background: rgba(122,101,64,0.09);
+    color: var(--text-faint);
+    border: 0.5px solid rgba(122,101,64,0.22);
+  }
+
+  @media (max-width: 640px) {
+    .tile-body { padding-left: 28px; }
+  }
+
+  /* ── HOW IT WORKS -- matching the row Jamie liked on Human Mastery.
+     Placeholder copy: I don't have HM's actual "How It Works" content to
+     clone verbatim, so this is a reasonable first pass in the same visual
+     language, not a copy of real, confirmed source text. Flag and revise
+     once you've seen it against HM's real wording. ── */
+  .how-it-works {
+    position: relative; z-index: 1;
+    max-width: 920px; margin: 0 auto;
+    padding: 8px 24px 56px;
+  }
+  .how-heading {
+    font-family: 'PT Serif', serif;
+    font-size: 24px; font-weight: 700;
+    color: var(--ink);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .how-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 780px) {
+    .how-steps { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .how-steps { grid-template-columns: 1fr; }
+  }
+  .how-step {
+    text-align: center;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 24px 20px;
+    backdrop-filter: blur(3px);
+  }
+  .how-step-number {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; color: var(--accent);
+    letter-spacing: 1px; margin-bottom: 10px;
+  }
+  .how-step-title {
+    font-family: 'PT Serif', serif;
+    font-size: 19px; font-weight: 700;
+    color: var(--ink); margin-bottom: 8px;
+  }
+  .how-step-desc {
+    font-family: 'PT Serif', serif;
+    font-size: 16px; color: var(--text-mid);
+    line-height: 1.55;
+  }
+
+  /* ── PROFILE INTAKE (Layer 1, Q4/Q5) -- Spec Section 5 ── */
+  .profile-intake {
+    max-width: 620px; margin: 28px auto 0;
+    text-align: center;
+  }
+  .intake-label {
+    font-family: 'PT Serif', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--blue);
+    line-height: 1.4; margin-bottom: 14px;
+  }
+  .intake-section-label {
+    font-family: 'PT Serif', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--blue);
+    line-height: 1.4;
+    margin: 28px 0 14px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(155,120,65,0.16);
+  }
+  .intake-text-input {
+    width: 100%;
+    font-family: 'PT Serif', serif; font-size: 17px;
+    padding: 13px 16px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(155,120,65,0.28);
+    border-radius: 5px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .intake-matrix {
+    display: flex; flex-wrap: wrap; gap: 9px;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .denom-btn {
+    font-family: 'PT Serif', serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(155,120,65,0.24);
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .denom-btn:hover { border-color: rgba(176,120,64,0.5); }
+  .denom-btn.selected {
+    background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+    color: var(--parchment);
+    border-color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .intake-unlisted {
+    margin-bottom: 18px;
+  }
+  .intake-unlisted-label {
+    font-family: 'PT Serif', serif;
+    font-size: 20px; font-weight: 600; color: var(--text-mid);
+    margin-bottom: 10px;
+  }
+  .intake-select {
+    width: 100%;
+    font-family: 'PT Serif', serif; font-size: 17px;
+    padding: 13px 16px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(155,120,65,0.28);
+    border-radius: 5px;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .intake-followup {
+    margin: 12px 0 14px;
+    padding: 14px 16px;
+    background: rgba(176,120,64,0.06);
+    border: 1px solid rgba(176,120,64,0.20);
+    border-radius: 6px;
+  }
+  .intake-followup-label {
+    display: block;
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; color: var(--accent-deep);
+    letter-spacing: 0.6px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .intake-followup .intake-select { margin-bottom: 0; }
+  .intake-version-note {
+    font-family: 'PT Serif', serif;
+    font-size: 15px; font-style: italic;
+    color: var(--text-dim);
+    margin-top: 8px; line-height: 1.5;
+  }
+  .intake-submit-button {
+    width: 100%;
+    font-family: 'PT Serif', serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--parchment);
+    background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+    border: 1px solid var(--accent-deep);
+    border-radius: 5px;
+    padding: 14px 22px;
+  }
+  .intake-submit-button:disabled { opacity: 0.6; }
+  .intake-error {
+    font-family: 'PT Serif', serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--blue);
+    background: rgba(0,0,255,0.06);
+    border: 1px solid rgba(0,0,255,0.30);
+    border-radius: 5px;
+    padding: 11px 14px;
+    margin-bottom: 14px;
+  }
+
+  /* Front-door-specific footer spacing. .footer-identifier's shared
+     default (56px top margin, 0 bottom) is tuned for the instrument
+     pages, where it sits inside .main and .main's own 64px bottom
+     padding already supplies trailing space. The front door has no such
+     wrapper below it -- this is the last element before </body> -- so
+     the shared default reads as too much space above (56px here, plus
+     .how-it-works' own 56px bottom padding -- 112px combined) and none
+     below. Overridden here rather than in the shared file so Counsel
+     and Refuge are unaffected. */
+  .footer-identifier {
+    margin-top: 24px;
+    margin-bottom: 40px;
+  }
+
+
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="wordmark">Script<span class="uv">uv</span>erse</div>
+  <p class="value-prop" id="valueProp">Scripture Advisory Instruments for Dimensions of Life.</p>
+  <p class="hero-line">Bring a dilemma or a real question for guidance that matters.</p>
+  <p class="hero-line">Receive scripture-anchored counsel based on your own tradition.</p>
+  <div class="badge-row">
+    <span class="badge badge-tier">Four Instruments</span>
+    <span class="badge badge-tier">5 Free Sessions &middot; No Credit Card</span>
+  </div>
+
+  <div class="email-cta" id="emailCta">
+    <div class="email-cta-label" id="ctaLabel">Enter your email to begin 5 free sessions</div>
+    <form class="email-cta-input-row" id="signinForm">
+      <input type="email" class="email-input" id="emailInput" placeholder="you@example.com" required autocomplete="email">
+      <button type="submit" class="email-cta-button" id="ctaButton">Start 5 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+    <div class="email-cta-fine-print" id="ctaFinePrint">No credit card &middot; No commitment &middot; Access all live instruments</div>
+  </div>
+
+  <!-- ── Layer 1 fixed-profile intake (Q4/Q5), per Spec Section 5. Hidden
+       until a session is confirmed; shown once, then replaced by a summary
+       once a profile row exists. ── -->
+  <div class="profile-intake" id="profileIntake" style="display:none;">
+    <div class="intake-label" id="intakeStatusLabel">Please select your faith or denomination</div>
+
+    <form id="intakeForm">
+      <div class="intake-error" id="intakeError" style="display:none;"></div>
+
+      <input type="hidden" id="denomText">
+
+      <div class="intake-matrix" id="denomMatrix"></div>
+
+      <!-- Charismatic modifier follow-up, per Section 5.7 (confirmed,
+           Decision 86) -- hidden unless Charismatic is selected. -->
+      <div class="intake-followup" id="charismaticFollowup" style="display:none;">
+        <label class="intake-followup-label">What's your home tradition?</label>
+        <select class="intake-select" id="homeTraditionSelect">
+          <option value="" selected disabled>Select your home tradition&hellip;</option>
+        </select>
+      </div>
+
+      <!-- Unlisted -- a labeled text field, always visible, not a button
+           to click, per Jamie's direct instruction. -->
+      <div class="intake-unlisted">
+        <div class="intake-unlisted-label">My tradition isn't listed here &ndash; I'll describe it:</div>
+        <input type="text" class="intake-text-input" id="unlistedInput" placeholder="Type your tradition here" autocomplete="off">
+        <div class="intake-followup" id="adaptiveFollowup" style="display:none;">
+          <label class="intake-followup-label" id="adaptiveFollowupQuestion"></label>
+          <input type="text" class="intake-text-input" id="adaptiveFollowupAnswer" placeholder="Your answer" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="intake-section-label">Please select your Bible version</div>
+      <div class="intake-matrix" id="bibleVersionMatrix"></div>
+
+      <div class="intake-unlisted">
+        <div class="intake-unlisted-label">My version isn't listed here &ndash; I'll specify:</div>
+        <input type="text" class="intake-text-input" id="unlistedVersionInput" placeholder="Type your Bible version here" autocomplete="off">
+      </div>
+
+      <div class="intake-version-note" id="versionNote"></div>
+
+      <button type="submit" class="intake-submit-button">Save and Continue</button>
+    </form>
+  </div>
+</section>
+
+<script type="module">
+  // ── Shape B auth: Supabase magic-link sign-in, per Decision 72. ──
+  const SUPABASE_URL = 'https://xvlqixdhxvsjcowjmxyl.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_CyR3UVVvOtrFziL4nI9mtA_3x2g4JgS';
+
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const form = document.getElementById('signinForm');
+  const input = document.getElementById('emailInput');
+  const button = document.getElementById('ctaButton');
+  const label = document.getElementById('ctaLabel');
+  const finePrint = document.getElementById('ctaFinePrint');
+
+  // Session check on load -- if a magic-link redirect just landed here,
+  // or a prior session is still valid, reflect that immediately rather
+  // than showing the sign-in form to someone already signed in.
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) showSignedIn(session);
+  });
+
+  // Fires on the magic-link redirect landing (SIGNED_IN) and on sign-out.
+  // This is the actual session-handling piece crisis-marker-handler.ts
+  // flagged as not yet built -- this is that build.
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) showSignedIn(session);
+    if (event === 'SIGNED_OUT') showSignedOut();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = input.value.trim();
+    if (!email) return;
+
+    button.disabled = true;
+    button.textContent = 'Sending...';
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // Where the magic-link email sends the user back to. Must match
+        // a URL registered in Supabase's Auth > URL Configuration once
+        // the project exists -- see the setup checklist.
+        emailRedirectTo: window.location.href,
+      },
+    });
+
+    if (error) {
+      label.textContent = 'Could not send link: ' + (error.message || 'unknown error') + '.';
+      label.classList.add('label-error');
+      button.disabled = false;
+      button.innerHTML = 'Start 5 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      console.error('[scriptuverse-auth] signInWithOtp error:', error);
+      return;
+    }
+
+    // Deliberately vague about whether the address is new or returning --
+    // avoids leaking account existence to an unauthenticated visitor.
+    label.textContent = 'Check your email for a sign-in link.';
+    label.classList.remove('label-error', 'label-attention');
+    label.classList.add('label-attention');
+    form.style.display = 'none';
+    finePrint.textContent = "We've sent a link to " + email + ". No password needed.";
+  });
+
+  function showSignedIn(session) {
+    label.textContent = "You're signed in as " + session.user.email + ".";
+    label.classList.remove('label-error', 'label-attention');
+    label.classList.add('label-confirmed');
+    form.style.display = 'none';
+    finePrint.textContent = 'Setting up your profile...';
+    loadProfile(session.user);
+  }
+
+  function showSignedOut() {
+    label.textContent = 'Enter your email to begin 5 free sessions';
+    label.classList.remove('label-error', 'label-attention', 'label-confirmed', 'veteran');
+    form.style.display = 'flex';
+    finePrint.textContent = 'No credit card \u00b7 No commitment \u00b7 Access all live instruments';
+    finePrint.classList.remove('fine-print-attention', 'fine-print-confirmed', 'veteran');
+    document.getElementById('profileIntake').style.display = 'none';
+    document.getElementById('valueProp')?.classList.remove('resolved');
+  }
+
+  // ── Layer 1 fixed-profile intake logic (Spec Section 5) ──
+
+  // Denomination-aware Bible version defaults, per Section 5.5. Anything
+  // not listed here falls through to the silent KJV default described in
+  // the same section -- KJV is already the select's first/default option,
+  // so "do nothing" already produces the correct behavior for every
+  // tradition not explicitly mapped below.
+  const VERSION_DEFAULTS = {
+    'Catholic (Roman Catholic)': { version: 'NABRE', note: '' },
+    'Eastern Orthodox': { version: 'KJV', note: '' },
+    "Jehovah's Witness": {
+      version: 'NWT',
+      note: 'The New World Translation is the version your tradition holds as scripture.',
+    },
+    'Latter-day Saint': {
+      version: 'KJV',
+      note: 'The King James Version is shown here specifically because it is the version your tradition uses. Scriptuverse itself remains scripture-anchored to the Bible; it does not engage the Book of Mormon, Doctrine and Covenants, or Pearl of Great Price directly.',
+    },
+  };
+
+  // Alphabetical, matching the approved matrix prototype -- no family
+  // groupings, since Jamie found the grouped version too vertically long.
+  const TRADITIONS = [
+    'Anabaptist / Mennonite',
+    'Anglican / Episcopal',
+    'Baptist',
+    'Catholic (Roman Catholic)',
+    'Charismatic renewal within another tradition',
+    'Congregationalist / United Church of Christ tradition',
+    'Cultural Christian / occasional practice',
+    'Eastern Orthodox',
+    'Exploring Christianity / not yet affiliated',
+    'Holiness tradition',
+    "Jehovah's Witness",
+    'Latter-day Saint',
+    'Lutheran',
+    'Methodist / Wesleyan',
+    'Non-denominational / independent Christian',
+    'Oriental Orthodox',
+    'Pentecostal',
+    'Quaker / Religious Society of Friends',
+    'Reformed / Presbyterian',
+    'Restorationist movement',
+    'Seventh-day Adventist',
+  ];
+
+  const DENOM_OPTIONS_FOR_HOME_TRADITION = TRADITIONS.filter(
+    name => name !== 'Charismatic renewal within another tradition'
+  );
+
+  const homeTraditionSelect = document.getElementById('homeTraditionSelect');
+  DENOM_OPTIONS_FOR_HOME_TRADITION.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    homeTraditionSelect.appendChild(opt);
+  });
+
+  const denomText = document.getElementById('denomText');
+  const denomMatrix = document.getElementById('denomMatrix');
+  const unlistedInput = document.getElementById('unlistedInput');
+  const charismaticFollowup = document.getElementById('charismaticFollowup');
+  const bibleVersionMatrix = document.getElementById('bibleVersionMatrix');
+  const unlistedVersionInput = document.getElementById('unlistedVersionInput');
+  const versionNote = document.getElementById('versionNote');
+
+  const BIBLE_VERSIONS = [
+    { code: 'ESV', label: 'English Standard Version (ESV)' },
+    { code: 'KJV', label: 'King James Version (KJV)' },
+    { code: 'NABRE', label: 'New American Bible, Revised Edition (NABRE)' },
+    { code: 'NASB', label: 'New American Standard Bible (NASB)' },
+    { code: 'NIV', label: 'New International Version (NIV)' },
+    { code: 'NWT', label: 'New World Translation (NWT)' },
+    { code: 'RSV-CE', label: 'Revised Standard Version, Catholic Edition (RSV-CE)' },
+  ]; // alphabetical by label, same convention as the denomination matrix
+
+  let selectedVersionBtn = null;
+  let selectedVersion = 'KJV'; // silent default per Section 5.5
+
+  BIBLE_VERSIONS.forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'denom-btn';
+    btn.textContent = v.label;
+    btn.addEventListener('click', () => selectVersion(btn, v.code));
+    bibleVersionMatrix.appendChild(btn);
+    if (v.code === 'KJV') selectVersion(btn, 'KJV'); // default selection on load
+  });
+
+  function selectVersion(btn, code) {
+    if (selectedVersionBtn) selectedVersionBtn.classList.remove('selected');
+    btn.classList.add('selected');
+    selectedVersionBtn = btn;
+    selectedVersion = code;
+    unlistedVersionInput.value = '';
+  }
+
+  // Same convergence principle as the denomination unlisted field -- typing
+  // a version not on the list clears the matrix selection and becomes the
+  // value of record.
+  unlistedVersionInput.addEventListener('input', () => {
+    if (unlistedVersionInput.value.trim()) {
+      if (selectedVersionBtn) { selectedVersionBtn.classList.remove('selected'); selectedVersionBtn = null; }
+      selectedVersion = unlistedVersionInput.value.trim();
+    }
+  });
+
+  let selectedBtn = null;
+
+  // Clicking a button fills the same hidden field the unlisted text input
+  // uses, per Section 5.3's convergence principle -- both paths produce the
+  // same underlying denomination value regardless of how it was entered.
+  TRADITIONS.forEach(name => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'denom-btn';
+    btn.textContent = name;
+    btn.addEventListener('click', () => selectDenomination(btn, name));
+    denomMatrix.appendChild(btn);
+  });
+
+  function selectDenomination(btn, name) {
+    if (selectedBtn) selectedBtn.classList.remove('selected');
+    btn.classList.add('selected');
+    selectedBtn = btn;
+    denomText.value = name;
+    unlistedInput.value = '';
+
+    if (name === 'Charismatic renewal within another tradition') {
+      charismaticFollowup.style.display = 'block';
+      applyVersionDefault('');
+    } else {
+      charismaticFollowup.style.display = 'none';
+      applyVersionDefault(name);
+    }
+  }
+
+  // Typing in the unlisted field clears any button selection, per Jamie's
+  // instruction that this is a plain labeled text field, not a button to
+  // click first -- typing here is itself the selection action.
+  unlistedInput.addEventListener('input', () => {
+    if (selectedBtn) { selectedBtn.classList.remove('selected'); selectedBtn = null; }
+    charismaticFollowup.style.display = 'none';
+    denomText.value = unlistedInput.value.trim();
+    applyVersionDefault('');
+    // A fresh edit invalidates any previously-fetched follow-up question --
+    // don't leave a stale question/answer pair attached to new text.
+    adaptiveFollowup.style.display = 'none';
+    adaptiveFollowupAnswer.value = '';
+    lastFollowupQuestion = null;
+  });
+
+  // The actual adaptive-follow-up call (Section 5.4, Decision 87's flagged
+  // gap) fires on blur, not on every keystroke -- asking mid-typing would
+  // both waste calls and interrupt someone still composing their answer.
+  const DENOM_FOLLOWUP_URL = 'https://xvlqixdhxvsjcowjmxyl.supabase.co/functions/v1/denomination-followup';
+  const adaptiveFollowup = document.getElementById('adaptiveFollowup');
+  const adaptiveFollowupQuestion = document.getElementById('adaptiveFollowupQuestion');
+  const adaptiveFollowupAnswer = document.getElementById('adaptiveFollowupAnswer');
+  let lastFollowupQuestion = null;
+
+  unlistedInput.addEventListener('blur', async () => {
+    const text = unlistedInput.value.trim();
+    if (!text || lastFollowupQuestion) return; // nothing typed, or already asked for this text
+
+    try {
+      const res = await fetch(DENOM_FOLLOWUP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tradition: text }),
+      });
+      const data = await res.json();
+      if (data.question) {
+        lastFollowupQuestion = data.question;
+        adaptiveFollowupQuestion.textContent = data.question;
+        adaptiveFollowup.style.display = 'block';
+      }
+    } catch (err) {
+      // Fails open -- the free-text description alone is still saved even
+      // if the follow-up call fails, per Decision 87's original fallback
+      // behavior. This is a nice-to-have enrichment, not a save-blocker.
+      console.error('[denomination-followup] call failed:', err);
+    }
+  });
+
+  homeTraditionSelect.addEventListener('change', () => {
+    applyVersionDefault(homeTraditionSelect.value);
+  });
+
+  function applyVersionDefault(denomination) {
+    const mapped = VERSION_DEFAULTS[denomination];
+    const targetCode = mapped ? mapped.version : 'KJV';
+    const targetBtn = Array.from(bibleVersionMatrix.children).find(
+      btn => BIBLE_VERSIONS.find(v => v.code === targetCode)?.label === btn.textContent
+    );
+    if (targetBtn) selectVersion(targetBtn, targetCode);
+    unlistedVersionInput.value = '';
+    versionNote.textContent = mapped ? mapped.note : '';
+  }
+
+  async function loadProfile(user) {
+    const { data, error } = await supabase
+      .from('scriptuverse_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[scriptuverse-profile] load error:', error);
+      // Fail open to the intake form rather than leaving the user stuck --
+      // worst case they re-enter something already saved.
+      showIntakeForm();
+      finePrint.textContent = 'Could not check for an existing profile (' + error.message + '). Showing the intake form as a fallback.';
+      return;
+    }
+
+    if (data) {
+      showProfileSummary(data);
+    } else {
+      showIntakeForm();
+    }
+  }
+
+  function showIntakeForm() {
+    document.getElementById('profileIntake').style.display = 'block';
+    finePrint.textContent = 'One more step before instruments unlock.';
+    finePrint.classList.add('fine-print-attention');
+  }
+
+  function showProfileSummary(profile) {
+    document.getElementById('profileIntake').style.display = 'none';
+    finePrint.classList.remove('fine-print-attention');
+    finePrint.classList.add('fine-print-confirmed');
+    finePrint.textContent = 'Tradition on file: ' + profile.denomination +
+      (profile.bible_version ? ' \u00b7 ' + profile.bible_version : '') +
+      '.';
+    renderInstrumentAccess(profile);
+  }
+
+  document.getElementById('intakeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const denomination = denomText.value.trim();
+    if (!denomination) {
+      unlistedInput.focus();
+      return;
+    }
+
+    const isCharismatic = denomination === 'Charismatic renewal within another tradition';
+    const isUnlisted = !TRADITIONS.includes(denomination);
+    let denomination_note = null;
+    if (isCharismatic) {
+      denomination_note = 'Home tradition: ' + (homeTraditionSelect.value || '');
+    } else if (isUnlisted) {
+      denomination_note = lastFollowupQuestion
+        ? ('Follow-up: ' + lastFollowupQuestion + ' -- Answer: ' + (adaptiveFollowupAnswer.value.trim() || '(not answered)'))
+        : 'Free text, unlisted -- adaptive follow-up question was not asked (call may have failed or field was never blurred)';
+    }
+
+    if (isCharismatic && !homeTraditionSelect.value) {
+      homeTraditionSelect.focus();
+      return;
+    }
+
+    const submitBtn = e.target.querySelector('.intake-submit-button');
+    const errorBox = document.getElementById('intakeError');
+    errorBox.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    const { error } = await supabase.from('scriptuverse_profiles').upsert({
+      id: user.id,
+      denomination,
+      denomination_note,
+      bible_version: selectedVersion,
+    });
+
+    if (error) {
+      console.error('[scriptuverse-profile] save error:', error);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save and Continue';
+      errorBox.textContent = 'Could not save: ' + (error.message || 'unknown error') +
+        '. If this is the first attempt, the scriptuverse_profiles table may not exist yet -- check that the SQL migration has been run.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    // Re-fetch the full row rather than hand-building one from the form
+    // fields -- this is the only way the just-applied DB defaults
+    // (subscription_status, trial_uses_remaining) are reflected correctly
+    // on first save, without duplicating those default values here too.
+    const { data: freshProfile } = await supabase
+      .from('scriptuverse_profiles').select('*').eq('id', user.id).maybeSingle();
+    showProfileSummary(freshProfile || { denomination, bible_version: selectedVersion });
+  });
+
+  // ── STRIPE / TRIAL ACCESS GATING ──────────────────────────────────────
+  // Per Decision 28: subscription/persistence logic belongs at the suite
+  // front door, not inside each instrument -- Counsel and Refuge's own
+  // pages carry no paywall screen of their own by design. This is that
+  // gate. Scoped to the two live tiles (Counsel, Refuge); Reflection and
+  // Study stay "Coming Soon" until they exist.
+  //
+  // REWRITTEN 2026-07-08 to clone HM's actual validated Stripe pattern
+  // (HMBDL Decision 25/26, BIS v1.7) instead of the dynamic-Checkout-
+  // Session approach this file originally shipped with today. HM's
+  // subscribe button is a static Stripe Payment Link with the trial
+  // token appended as ?client_reference_id=... -- no server round-trip
+  // to create a session first. Scriptuverse does the same, appending the
+  // Supabase user id instead of an anonymous trial token, since Shape B
+  // (Decision 69/72) already gives a real, durable identity to attach.
+  //
+  // REPLACE THIS with the real Payment Link once created in Stripe
+  // Dashboard (Product "Scriptuverse", $9.99/month recurring ->
+  // "Create payment link") -- see stripe-webhook-edge-function.ts's
+  // header for the full Dashboard setup steps, including setting this
+  // link's "After payment" redirect to come back here with ?checkout=success.
+  const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/REPLACE_WITH_SCRIPTUVERSE_PAYMENT_LINK';
+
+  const SUBSCRIBE_PRICE_LABEL = '$9.99/month';
+
+  function hasInstrumentAccess(profile) {
+    return profile.subscription_status === 'active' || (profile.trial_uses_remaining ?? 0) > 0;
+  }
+
+  function renderInstrumentAccess(profile) {
+    const accessStatus = document.getElementById('accessStatus');
+    if (!accessStatus) return;
+    const granted = hasInstrumentAccess(profile);
+
+    accessStatus.classList.remove('attention', 'confirmed');
+
+    // Shared "still pitching a new/early-trial visitor" check, per
+    // Jamie's rule: true only when trial_uses_remaining > 1 and not yet
+    // subscribed. Drives the value-prop headline's color and, as of this
+    // change, whether the sign-in/tradition lines are bold or recede for
+    // a veteran (subscribed, or down to the last free use) user.
+    const stillPitching = profile.subscription_status !== 'active'
+      && (profile.trial_uses_remaining ?? 0) > 1;
+
+    const valueProp = document.getElementById('valueProp');
+    if (valueProp) {
+      valueProp.classList.toggle('resolved', !stillPitching);
+    }
+
+    label.classList.toggle('veteran', !stillPitching);
+    finePrint.classList.toggle('veteran', !stillPitching);
+
+    if (profile.subscription_status === 'active') {
+      accessStatus.textContent = 'Subscribed \u00b7 Full Access to Counsel and Refuge.';
+    } else if (granted) {
+      const remaining = profile.trial_uses_remaining ?? 0;
+      accessStatus.textContent = remaining + (remaining === 1 ? ' Free Session Remaining.' : ' Free Sessions Remaining.');
+      accessStatus.classList.add('confirmed');
+    } else {
+      // This message is a genuine sentence ("Your free sessions are used
+      // up -- subscribe for $X to keep going"), so it stays sentence case
+      // per Jamie's rule rather than title case. The subscribe portion is
+      // now a real clickable link into checkout, reusing the same
+      // redirectToCheckout() the tile CTA buttons already call below --
+      // not a second, separate checkout path.
+      accessStatus.innerHTML = 'Your free sessions are used up \u2014 <a href="#" id="inlineSubscribeLink">subscribe for ' + SUBSCRIBE_PRICE_LABEL + '</a> to keep going.';
+      accessStatus.classList.add('attention');
+      const inlineSubscribeLink = document.getElementById('inlineSubscribeLink');
+      if (inlineSubscribeLink) {
+        inlineSubscribeLink.onclick = (e) => { e.preventDefault(); redirectToCheckout(); };
+      }
+    }
+
+    wireInstrumentTile('tile-cta-counsel', 'counsel-instrument.html', granted);
+    wireInstrumentTile('tile-cta-refuge', 'refuge-instrument.html', granted);
+  }
+
+  function wireInstrumentTile(ctaId, targetPage, granted) {
+    const cta = document.getElementById(ctaId);
+    if (!cta) return;
+    cta.style.cursor = 'pointer';
+
+    if (granted) {
+      // No client-side decrement here anymore -- per HM's own validated
+      // pattern (BIS Section 3.5), a session is only spent at the moment
+      // a real Output is generated, not at the moment someone opens the
+      // door. That decrement now lives inside counsel-edge-function.ts
+      // and refuge-edge-function.ts themselves, on a successful
+      // GENERATE_OUTPUT call, using the already-authenticated Shape B
+      // user -- see those files' own notes on this.
+      cta.onclick = () => { window.location.href = targetPage; };
+    } else {
+      cta.textContent = 'Subscribe to Continue';
+      cta.onclick = async () => {
+        await redirectToCheckout();
+      };
+    }
+  }
+
+  // Static Payment Link + client_reference_id, exactly mirroring how HM's
+  // Subscribe button appends its trial token to buy.stripe.com/9B66... .
+  // No Edge Function call needed to reach this point -- the Payment Link
+  // itself is the checkout session.
+  async function redirectToCheckout() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const url = STRIPE_PAYMENT_LINK
+      + '?client_reference_id=' + encodeURIComponent(user.id)
+      + '&prefilled_email=' + encodeURIComponent(user.email || '');
+    window.location.href = url;
+  }
+
+  // Handles the return trip from the Stripe Payment Link (once its
+  // "After payment" setting is configured to redirect back here with
+  // ?checkout=success -- see stripe-webhook-edge-function.ts's setup
+  // notes). The webhook that flips subscription_status to 'active' fires
+  // asynchronously and is usually near-instant but not guaranteed to have
+  // landed before this redirect completes -- a short delay-then-recheck
+  // covers the normal case without a hard dependency on exact timing.
+  (function handleCheckoutReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutState = params.get('checkout');
+    if (!checkoutState) return;
+    history.replaceState(null, '', window.location.pathname);
+    if (checkoutState === 'success') {
+      const accessStatus = document.getElementById('accessStatus');
+      if (accessStatus) {
+        accessStatus.textContent = 'Payment received \u2014 finalizing your subscription\u2026';
+        accessStatus.classList.add('attention');
+      }
+      setTimeout(async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) loadProfile(user);
+      }, 2000);
+    }
+  })();
+</script>
+
+
+<main class="main">
+
+  <div class="status-line" id="accessStatus"></div>
+
+  <div class="grid top">
+
+    <!-- COUNSEL -->
+    <details class="tile tile-static" open>
+      <summary onclick="event.preventDefault();">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M12 3 L12 21 M4 6 C4 6 7 4 12 4 C17 4 20 6 20 6 L20 18 C20 18 17 16 12 16 C7 16 4 18 4 18 Z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Dilemma &middot; Guidance</div>
+          <div class="tile-name">Counsel</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <div class="tile-desc">Bring a decision or a tension you're sitting with. Counsel walks through it with you and answers from your own tradition's scripture.</div>
+        <div class="tile-cta" id="tile-cta-counsel">Enter Counsel <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </div>
+    </details>
+
+    <!-- REFUGE -->
+    <details class="tile tile-static" open>
+      <summary onclick="event.preventDefault();">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M4 20 L4 11 L12 4 L20 11 L20 20 Z M9 20 L9 14 L15 14 L15 20" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Presence &middot; Accompaniment</div>
+          <div class="tile-name">Refuge</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <div class="tile-desc">For anxiety, grief, or the felt distance from God. Refuge meets you there to offer comfort and scripture-based resolution.</div>
+        <div class="tile-cta" id="tile-cta-refuge">Enter Refuge <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </div>
+    </details>
+
+  </div>
+
+  <div class="ornamental-divider">
+    <span class="line"></span>
+    <span class="mark"><span class="diamond"></span>In Development<span class="diamond"></span></span>
+    <span class="line right"></span>
+  </div>
+
+  <div class="grid">
+
+    <!-- REFLECTION -->
+    <details class="tile is-pending">
+      <summary>
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="8"/>
+          <path d="M12 8 L12 12 L15 14" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Practice &middot; Renewal</div>
+          <div class="tile-name">Reflection</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <span class="status-corner pending">In Development</span>
+        <div class="tile-desc">A recurring rhythm of noticing where you were formed, and where you're still becoming.</div>
+        <div class="tile-cta">Coming Soon</div>
+      </div>
+    </details>
+
+    <!-- STUDY -->
+    <details class="tile is-pending">
+      <summary>
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M4 5 C4 5 8 3 12 5 C16 3 20 5 20 5 L20 19 C20 19 16 17 12 19 C8 17 4 19 4 19 Z M12 5 L12 19" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Passage &middot; Scholarship</div>
+          <div class="tile-name">Study</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <span class="status-corner pending">In Development</span>
+        <div class="tile-desc">Go deeper on a passage, theme, or doctrine &ndash; for when you're seeking understanding, not resolution.</div>
+        <div class="tile-cta">Coming Soon</div>
+      </div>
+    </details>
+
+  </div>
+
+</main>
+
+<section class="how-it-works">
+  <div class="how-heading">How It Works</div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-step-number">01</div>
+      <div class="how-step-title">Tell Us Your Tradition</div>
+      <div class="how-step-desc">Denomination and Bible version, set once for the whole suite.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-step-number">02</div>
+      <div class="how-step-title">Choose an Instrument</div>
+      <div class="how-step-desc">Counsel for a decision, Refuge for grief or fear.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-step-number">03</div>
+      <div class="how-step-title">Share What's Real</div>
+      <div class="how-step-desc">A few honest questions, adaptive to what you bring.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-step-number">04</div>
+      <div class="how-step-title">Scripture-Based Response</div>
+      <div class="how-step-desc">Receive commentary and guidance rooted in your tradition.</div>
+    </div>
+  </div>
+</section>
+
+<div class="footer-identifier">SCRIPTUVERSE &middot; Scripture&ndash;based Instruments</div>
+
+</body>
+</html>
