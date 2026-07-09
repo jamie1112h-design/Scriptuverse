@@ -1,0 +1,269 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   SCRIPTUVERSE SHARED STYLESHEET
+   ═══════════════════════════════════════════════════════════════════════
+   Every Scriptuverse page (front door, Counsel, and Refuge/Reflection/
+   Study once built) links to this file rather than embedding its own
+   copy of these tokens and components. This exists specifically because
+   Counsel's first build re-derived styling from memory instead of pulling
+   from the front door's actual current CSS, and none of the front door's
+   already-fixed refinements (font sizes, blue action-colour labels,
+   italics removed, the 36px header rule) carried over as a result. A fix
+   made here applies to every page that links to this file automatically --
+   that is the entire point of this file existing.
+
+   FONT SYSTEM (adopted, ScriptBDL Decision 105 -- supersedes the font
+   portion of Decision 11): exactly three font families platform-wide.
+     - WORDMARK -- Crimson Pro -- the word "Scriptuverse" only, wherever
+       it appears as the brand mark (.logo included)
+     - SERIF    -- PT Serif    -- every other serif use: body copy,
+       headings, instrument names, buttons, disclaimers, output text
+     - SANS     -- Google Sans -- every sans/mono use: labels, status
+       lines, progress bar, question numbers, suite label
+   Playfair Display, Avenir, Arial Black, and Share Tech Mono are retired
+   platform-wide as of this version. Color palette and every non-font
+   rule are unchanged from the prior version of this file.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --parchment:     #f5f0e8;
+  --parchment2:    #ede7d9;
+  --ink:           #2a1f0e;
+  --ink-mid:       #4a3820;
+  --ink-faint:     #7a6540;
+  --gold:          #b8965a;
+  --gold-dark:     #9a7a45;
+  --gold-deeper:   #7a6030;
+  --accent:        #b07840;
+  --accent-deep:   #7a5025;
+  --blue:          #0000ff;   /* BIS 2.3: HM action colour -- CTAs, headlines, actionable labels */
+  --card-bg:       rgba(255,255,255,0.62);
+  --card-border:   rgba(155,120,65,0.22);
+  --card-focus:    rgba(176,120,64,0.45);
+  --text:          #2a1f0e;
+  --text-mid:      #4a3820;
+  --text-dim:      #7a6540;
+  --text-faint:    #8c744e;
+}
+
+* , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: 'PT Serif', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.7;
+}
+
+/* ── HEADER -- interior instrument pages carry this; the suite front door
+   deliberately does not (per Jamie's explicit instruction on that build).
+   Wordmark now Crimson Pro, per the 3-font test -- this is a literal
+   instance of "Scriptuverse," not a general sans-serif label. ── */
+.site-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px;
+  border-bottom: 1px solid rgba(155,120,65,0.20);
+}
+.logo {
+  font-family: 'Crimson Pro', serif;
+  font-size: 36px; font-weight: 700;
+  color: var(--gold); letter-spacing: 1px;
+  line-height: 1;
+  text-decoration: none;
+}
+@media (max-width: 560px) {
+  .logo { font-size: 26px; letter-spacing: 1px; }
+}
+.suite-label {
+  font-family: 'Google Sans', Arial, sans-serif;
+  font-size: 15px; color: var(--text-faint); letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── HERO ── */
+.hero { text-align: center; padding: 40px 24px 28px; }
+.instrument-name {
+  font-family: 'PT Serif', serif;
+  font-size: 44px; font-weight: 700; color: var(--accent-deep);
+  margin-bottom: 10px;
+}
+.instrument-tagline {
+  font-family: 'PT Serif', serif; font-size: 19px; color: var(--text-dim);
+}
+
+.main { max-width: 720px; margin: 0 auto; padding: 20px 24px 64px; }
+
+/* ── DISCLAIMER BOX -- Section 2.1's locked disclaimer uses this; also a
+   general-purpose "important, not urgent" box for similar copy. Not
+   italic, not tiny -- both mistakes an earlier pass made. ── */
+.disclaimer-box {
+  background: rgba(176,120,64,0.07);
+  border: 1px solid rgba(176,120,64,0.25);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 28px;
+  font-family: 'PT Serif', serif;
+  font-size: 16px; color: var(--text-mid);
+  line-height: 1.6;
+}
+
+/* ── ACTION-REQUIRED TEXT -- the platform's blue treatment (BIS 2.3),
+   for section headings and status messages the user needs to notice and
+   act on. Larger and bolder than passive body text by design. ── */
+.action-label {
+  font-family: 'PT Serif', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--blue);
+  line-height: 1.4;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.status-line {
+  font-family: 'Google Sans', Arial, sans-serif;
+  font-size: 17px; color: var(--text-dim);
+  text-align: center; margin-bottom: 20px;
+}
+.status-line.attention { color: var(--blue); font-weight: 700; font-size: 17px; }
+.status-line.attention a { color: inherit; text-decoration: underline; cursor: pointer; }
+.status-line.confirmed { color: var(--text-dim); font-weight: 700; }
+
+/* ── BUTTONS -- one canonical primary-button treatment, used everywhere
+   (front-door CTA, instrument-page submit/continue). ── */
+.btn-primary {
+  font-family: 'PT Serif', serif;
+  font-size: 17px; font-weight: 700;
+  color: var(--parchment);
+  background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+  border: 1px solid var(--accent-deep);
+  border-radius: 6px;
+  padding: 15px 32px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-row { text-align: center; margin-top: 24px; }
+
+/* ── SCREEN MANAGEMENT -- multi-step instrument flows (Layer 1 -> Layer 2
+   -> Output) all share this show/hide pattern. ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { margin-bottom: 22px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-family: 'Google Sans', Arial, sans-serif;
+  font-size: 15px; color: var(--text-dim); letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.progress-bar { height: 3px; background: rgba(155,120,65,0.18); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease; }
+
+/* ── QUESTION CARDS -- Layer 1/Layer 2 intake questions. ── */
+.q-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  transition: border-color 0.15s;
+}
+.q-card:focus-within { border-color: var(--card-focus); }
+.q-number {
+  font-family: 'Google Sans', Arial, sans-serif;
+  font-size: 15px; color: var(--accent-deep); letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.q-text {
+  font-family: 'PT Serif', serif; font-size: 19px; font-weight: 700;
+  color: var(--ink); margin-bottom: 6px; line-height: 1.4;
+}
+.q-hint {
+  font-family: 'PT Serif', serif; font-size: 18px;
+  color: var(--text-faint); margin-bottom: 12px; line-height: 1.5;
+}
+.q-card textarea {
+  width: 100%;
+  font-family: 'PT Serif', serif; font-size: 17px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(155,120,65,0.25);
+  border-radius: 6px;
+  color: var(--ink);
+  resize: vertical;
+}
+
+/* ── LOADING STATE ── */
+.loading-wrap { text-align: center; padding: 80px 24px; }
+.loading-spinner {
+  width: 40px; height: 40px; margin: 0 auto 24px;
+  border: 3px solid rgba(155,120,65,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-label {
+  font-family: 'PT Serif', serif; font-size: 22px; font-weight: 700;
+  color: var(--ink); margin-bottom: 8px;
+}
+.loading-sub {
+  font-family: 'PT Serif', serif; font-size: 16px;
+  color: var(--text-dim);
+}
+
+/* ── OUTPUT GALAXY RENDERING -- markdown-rendered instrument responses. ── */
+.output-body h1, .output-body h2 {
+  font-family: 'PT Serif', serif; font-size: 24px; font-weight: 700;
+  color: var(--accent-deep); margin: 28px 0 12px;
+}
+.output-body h1:first-child, .output-body h2:first-child { margin-top: 0; }
+.output-body p { margin-bottom: 14px; font-size: 18px; }
+.output-body ul, .output-body ol { padding-left: 24px; margin-bottom: 14px; }
+.output-body li { margin-bottom: 8px; font-size: 18px; }
+.output-body strong { color: var(--ink); font-weight: 700; }
+.output-body em { color: var(--text-mid); }
+.output-body blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 18px;
+  margin: 16px 0;
+  color: var(--text-mid);
+}
+
+.section-divider {
+  border: none; border-top: 1px solid rgba(155,120,65,0.2);
+  margin: 32px 0;
+}
+
+/* ── FOOTER IDENTIFIER -- a small, muted repeat of the wordmark + suite
+   label at the bottom of a screen, distinct from .site-header's full-size
+   treatment at the top. Crimson Pro here is correct per Decision 105 (the
+   wordmark font applies wherever "Scriptuverse" appears as a brand mark,
+   not only in the header), just at a much smaller size and muted color so
+   it reads as a quiet identifier, not a second header. ── */
+.footer-identifier {
+  display: block;
+  text-align: center;
+  margin: 56px auto 0;
+  font-family: 'Crimson Pro', serif;
+  font-size: 20px;
+  color: var(--text-faint);
+  letter-spacing: 0.5px;
+}
+
+/* ── PRINT / PDF (Decision 113) -- restored 2026-07-08. Confirmed missing
+   from the working copy of this file via Refuge's own first live PDF
+   export (Decision 118), where .btn-row and .hero were visibly present
+   in the printed output. Scope matches Decision 113's original spec
+   exactly, not expanded: header (wordmark + suite label) and the
+   disclaimer-box print by default since neither is hidden here -- only
+   .hero, .btn-row, .progress-wrap, and .status-line are excluded, and the
+   background switches to plain white to avoid printing the parchment
+   tone. This one rule also directly answers Jamie's separate ask (buttons
+   shouldn't appear on the printed page) -- same fix, not a second one. ── */
+@media print {
+  body { background: #fff; }
+  .hero, .btn-row, .progress-wrap, .status-line { display: none; }
+}

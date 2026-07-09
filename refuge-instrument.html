@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refuge &ndash; Scriptuverse</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<link rel="stylesheet" href="scriptuverse-shared.css">
+<style>
+  /* Refuge-specific overrides only. Everything else (colors, header,
+     hero, buttons, cards, progress bar, loading state, output rendering,
+     print/PDF) comes from scriptuverse-shared.css -- do not re-add copies
+     of those rules here, per Decision 100's whole reason for existing. */
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="scriptuverse-front-door-shell.html">SCRIPTUVERSE</a>
+  <div class="suite-label">Refuge</div>
+</header>
+
+<div class="hero">
+  <div class="instrument-name">Refuge</div>
+  <!-- DRAFT tagline -- adapted from the front door's own tile description
+       (locked copy, per the front-door-shell.html source). Not yet checked
+       against Scriptuverse_Refuge_Worked_Example_Run1.md, which was not
+       part of this session's uploads -- confirm or replace before launch. -->
+  <div class="instrument-tagline">For grief, fear, or the felt distance from God &ndash; a place to be met, not managed.</div>
+</div>
+
+<main class="main">
+
+  <div id="screen-not-signed-in" class="screen">
+    <div class="disclaimer-box">You need to sign in and complete your tradition profile at the Scriptuverse front door before using Refuge.</div>
+    <div class="btn-row"><a class="btn-primary" href="scriptuverse-front-door-shell.html" style="text-decoration:none; display:inline-block;">Go to Front Door</a></div>
+  </div>
+
+  <div id="screen-l1" class="screen">
+
+    <!-- Section 2.1 disclaimer -- platform-wide, identical wording to
+         Counsel's per Decision 98 (not instrument-specific copy). -->
+    <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
+
+    <div class="status-line" id="profileStatus"></div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>What You're Carrying</span><span id="l1-counter">0 / 4</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="l1-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="action-label">Please provide your answers to these questions.</div>
+
+    <div id="l1-questions"></div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-l1-next" onclick="submitL1()" disabled>Continue &rarr;</button>
+    </div>
+
+    <div class="footer-identifier">SCRIPTUVERSE &middot; Refuge</div>
+  </div>
+
+  <div id="screen-loading-l2" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Sitting With What You've Shared</div>
+      <div class="loading-sub">Taking this in&hellip;</div>
+    </div>
+  </div>
+
+  <div id="screen-l2" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-label"><span>A Few More Questions</span><span id="l2-counter">0 / 0</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="l2-bar" style="width:0%"></div></div>
+    </div>
+    <div id="l2-questions"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-l2-next" onclick="submitL2()" disabled>Receive Refuge &rarr;</button>
+    </div>
+  </div>
+
+  <div id="screen-loading-output" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Sitting With You</div>
+      <div class="loading-sub">Looking to scripture &middot; Forming a response&hellip;</div>
+    </div>
+  </div>
+
+  <div id="screen-output" class="screen">
+    <div class="output-body" id="output-body"></div>
+    <hr class="section-divider">
+    <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="window.print()">Download PDF</button>
+      <button class="btn-primary" onclick="resetInstrument()">Share Something New &rarr;</button>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://xvlqixdhxvsjcowjmxyl.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_CyR3UVVvOtrFziL4nI9mtA_3x2g4JgS';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Layer 1 wording -- per Scriptuverse_Refuge_Worked_Example_Run1.md's own
+  // "Layer 1 Wording Note": Refuge inherits Decision 23's structural
+  // sequence unchanged, but two of the seven original questions needed
+  // register-specific rewording so as not to sound like a dilemma-
+  // resolution intake. The text below for "tension" and "stakeholders" is
+  // that actual tested wording, not this session's own paraphrase (an
+  // earlier draft this session used different, un-tested wording here --
+  // corrected once the worked example was available). "feeling" and
+  // "desired_outcome" carry over from Counsel's own current live wording
+  // unchanged, consistent with that same note.
+  const L1_QUESTIONS = [
+    {
+      id: 'tension',
+      label: 'What\u2019s Present',
+      text: "What's the weight you're carrying that brought you here right now?",
+      hint: 'Whatever\u2019s real for you \u2014 there\u2019s no need to make it tidy or make sense of it yet.'
+    },
+    {
+      id: 'feeling',
+      label: 'How You\u2019re Feeling',
+      text: 'How are you feeling about this right now?',
+      hint: 'However it actually feels \u2014 there\u2019s no right answer here.'
+    },
+    {
+      id: 'stakeholders',
+      label: 'Who Else Is Touched By This',
+      text: "Is this something that's touching just you, or others too?",
+      hint: 'Family, a partner, anyone else whose life touches this loss or fear.'
+    },
+    {
+      id: 'desired_outcome',
+      label: 'What You\u2019re Hoping For',
+      text: 'What would a good resolution actually look like to you?',
+      hint: 'Not necessarily what you think is realistic \u2014 what you\u2019re actually hoping for.'
+    },
+  ];
+
+  let profile = null;
+  let l1Answers = {};
+  let l2Questions = [];
+  let l2Answers = {};
+
+  const EDGE_FUNCTION_NAME = 'refuge';
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function buildProfileText() {
+    return 'FIXED PROFILE:\nDenomination: ' + (profile.denomination || 'Not specified') +
+      (profile.denomination_note ? ' (' + profile.denomination_note + ')' : '') +
+      '\nBible version: ' + (profile.bible_version || 'KJV');
+  }
+
+  function buildL1() {
+    const container = document.getElementById('l1-questions');
+    container.innerHTML = '';
+    L1_QUESTIONS.forEach(q => {
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.innerHTML = `
+        <div class="q-number">${q.label}</div>
+        <div class="q-text">${q.text}</div>
+        <div class="q-hint">${q.hint}</div>
+        <textarea id="${q.id}" placeholder="Your answer\u2026" rows="3" oninput="window.updateL1('${q.id}', this.value)"></textarea>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  window.updateL1 = function(id, value) {
+    if (value.trim()) { l1Answers[id] = value.trim(); } else { delete l1Answers[id]; }
+    const count = Object.keys(l1Answers).length;
+    document.getElementById('l1-counter').textContent = count + ' / ' + L1_QUESTIONS.length;
+    document.getElementById('l1-bar').style.width = (count / L1_QUESTIONS.length * 100) + '%';
+    document.getElementById('btn-l1-next').disabled = count < L1_QUESTIONS.length;
+  };
+
+  function buildL2(questions) {
+    const container = document.getElementById('l2-questions');
+    container.innerHTML = '';
+    questions.forEach((q, i) => {
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.innerHTML = `
+        <div class="q-number">Going Deeper &middot; ${i + 1}</div>
+        <div class="q-text">${q.text}</div>
+        <textarea id="l2_${q.id}" placeholder="Your answer\u2026" rows="3" oninput="window.updateL2('${q.id}', this.value)"></textarea>
+      `;
+      container.appendChild(card);
+    });
+    document.getElementById('l2-counter').textContent = '0 / ' + questions.length;
+    // Prefill acceleration hook (Decision 28 / BIS 3.8) -- see the
+    // prefillIfRequested block near the end of this script.
+    if (window.__prefillL2Hook) window.__prefillL2Hook(questions);
+  }
+
+  window.updateL2 = function(id, value) {
+    if (value.trim()) { l2Answers[id] = value.trim(); } else { delete l2Answers[id]; }
+    const count = Object.keys(l2Answers).length;
+    document.getElementById('l2-counter').textContent = count + ' / ' + l2Questions.length;
+    document.getElementById('l2-bar').style.width = (count / l2Questions.length * 100) + '%';
+    document.getElementById('btn-l2-next').disabled = count < 1;
+  };
+
+  window.submitL1 = async function() {
+    showScreen('screen-loading-l2');
+    const l1Text = L1_QUESTIONS.map(q =>
+      q.label + ':\n' + (l1Answers[q.id] || '(not answered)')
+    ).join('\n\n');
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: {
+          messages: [{ role: 'user', content: '[GENERATE_LAYER2]\n\n' + buildProfileText() + '\n\n' + l1Text }],
+          max_tokens: 1500,
+        },
+      });
+      if (error) throw error;
+      const parsed = JSON.parse(data.reply.trim().replace(/```json|```/g, '').trim());
+      l2Questions = parsed.questions;
+      buildL2(l2Questions);
+      showScreen('screen-l2');
+    } catch (err) {
+      alert('Something went wrong generating follow-up questions. Please try again.\n\n' + err.message);
+      showScreen('screen-l1');
+    }
+  };
+
+  window.submitL2 = async function() {
+    showScreen('screen-loading-output');
+    const l1Text = L1_QUESTIONS.map(q =>
+      q.label + ':\n' + (l1Answers[q.id] || '(not answered)')
+    ).join('\n\n');
+    const l2Text = l2Questions.map(q =>
+      'Q: ' + q.text + '\nA: ' + (l2Answers[q.id] || '(not answered)')
+    ).join('\n\n');
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: {
+          messages: [{
+            role: 'user',
+            content: '[GENERATE_OUTPUT]\n\n' + buildProfileText() +
+              '\n\nLAYER 1:\n' + l1Text + '\n\nLAYER 2:\n' + l2Text,
+          }],
+          max_tokens: 4000,
+        },
+      });
+      if (error) throw error;
+      renderOutput(data.reply);
+      showScreen('screen-output');
+    } catch (err) {
+      alert('Something went wrong generating your response. Please try again.\n\n' + err.message);
+      showScreen('screen-l2');
+    }
+  };
+
+  function renderOutput(text) {
+    document.getElementById('output-body').innerHTML = marked.parse(text);
+  }
+
+  window.resetInstrument = function() {
+    l1Answers = {}; l2Questions = []; l2Answers = {};
+    document.querySelectorAll('textarea').forEach(t => t.value = '');
+    document.getElementById('l1-counter').textContent = '0 / ' + L1_QUESTIONS.length;
+    document.getElementById('l1-bar').style.width = '0%';
+    document.getElementById('btn-l1-next').disabled = true;
+    document.getElementById('output-body').innerHTML = '';
+    buildL1();
+    showScreen('screen-l1');
+  };
+
+  (async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { showScreen('screen-not-signed-in'); return; }
+
+    const { data, error } = await supabase
+      .from('scriptuverse_profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (error || !data) {
+      showScreen('screen-not-signed-in');
+      return;
+    }
+
+    profile = data;
+    document.getElementById('profileStatus').textContent =
+      'Tradition on file: ' + profile.denomination +
+      (profile.bible_version ? ' \u00b7 ' + profile.bible_version : '');
+
+    buildL1();
+    showScreen('screen-l1');
+  })();
+
+  // ── PREFILL TEST ACCELERATION -- Decision 28 / BIS v1.7 Section 3.8 ─────
+  // Activate with: ?prefill=1
+  // Same mechanism and same rationale as counsel-instrument.html's copy of
+  // this block (Shape B means no ?token= needed; module scope means the
+  // hook lives inside buildL2() itself rather than a window.buildL2
+  // override) -- see that file's own comment for the full explanation,
+  // not repeated verbatim here.
+  //
+  // Canonical Layer 1 answers below are DELIBERATELY BORING, generic test
+  // data -- per Jamie's direct decision (2026-07-08) to replace the
+  // originally-drafted real grief scenario once the actual intent of this
+  // block was clarified: verifying UX mechanics, not evaluating LLM output
+  // quality. This matters more here than on Counsel -- the earlier version
+  // risked a real grieving subscriber who ever triggered this seeing a
+  // fabricated bereavement reflected back at them, a direct mismatch with
+  // what Refuge exists to do. See ScriptBDL Decision 114.
+  (function prefillIfRequested() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('prefill') !== '1') return;
+
+    const PREFILL_L1 = {
+      tension: 'This is a test entry to confirm the intake flow is working correctly.',
+      feeling: 'Neutral \u2014 this is a functional test, not a real submission.',
+      stakeholders: 'No one \u2014 this is a test entry only.',
+      desired_outcome: 'Confirming that the flow proceeds correctly to the next screen.',
+    };
+    const PREFILL_L2_ANSWER = 'Testing prefill \u2014 placeholder answer for mechanics testing only.';
+
+    const waitForL1 = setInterval(function() {
+      const firstField = document.getElementById(L1_QUESTIONS[0].id);
+      if (!firstField) return;
+      clearInterval(waitForL1);
+
+      L1_QUESTIONS.forEach(q => {
+        const val = PREFILL_L1[q.id] || 'Prefill test answer.';
+        window.updateL1(q.id, val);
+        const el = document.getElementById(q.id);
+        if (el) el.value = val;
+      });
+
+      window.__prefillL2Hook = function(questions) {
+        questions.forEach(q => {
+          window.updateL2(q.id, PREFILL_L2_ANSWER);
+          const el = document.getElementById('l2_' + q.id);
+          if (el) el.value = PREFILL_L2_ANSWER;
+        });
+        setTimeout(function() { submitL2(); }, 400);
+      };
+
+      setTimeout(function() { submitL1(); }, 400);
+    }, 100);
+  })();
+</script>
+
+</body>
+</html>
