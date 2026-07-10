@@ -43,6 +43,24 @@
 // a fast-follow once RESEND_API_KEY / a verified Scriptuverse sending
 // domain exist, not omitted by oversight.
 //
+// UPDATED 2026-07-10 -- current_period_end/current_period_start fix.
+// The Stripe event destination this function actually receives events
+// under is pinned to API version 2026-06-24.dahlia, well after the
+// "Basil" version (2025-03-31) removed current_period_end and
+// current_period_start from the top-level Subscription object entirely --
+// they now live per subscription item instead. The customer.subscription.
+// updated handler below was reading the old top-level field directly,
+// which would have come back undefined under this account's actual event
+// version -- new Date(undefined * 1000).toISOString() throws a
+// RangeError, failing every subscription-update delivery and triggering
+// Stripe's retry loop indefinitely. Fixed to read
+// sub.items.data[0].current_period_end instead, with a defensive fallback
+// (log and skip the period-end field specifically, but still update
+// subscription_status) if that path is ever absent for any reason, rather
+// than letting the whole handler throw. Scriptuverse's Payment Link is
+// single-item only, so items.data[0] is the correct, only item to read --
+// not a simplification that loses information for this product.
+//
 // ── REQUIRED SETUP ──────────────────────────────────────────────────────
 // Supabase secrets for this function (Edge Functions -> stripe-webhook ->
 // Secrets), in addition to the auto-injected SUPABASE_* ones:
@@ -66,16 +84,16 @@
 //   1. Create the Scriptuverse Payment Link first (Product "Scriptuverse",
 //      $9.99/month recurring price -> "Create payment link"). Copy the
 //      resulting buy.stripe.com/... URL into the front door (see
-//      scriptuverse-front-door-shell.html's STRIPE_PAYMENT_LINK constant).
+//      index.html's STRIPE_PAYMENT_LINK constant).
 //   2. Set that Payment Link's "After payment" setting to redirect to
 //      wherever the front door is actually live, with ?checkout=success
-//      appended (e.g. https://scriptuverse.com/scriptuverse-front-door-shell.html?checkout=success)
+//      appended (e.g. https://www.scriptuverse.com/?checkout=success)
 //      rather than Stripe's default hosted confirmation page.
-//   3. Developers -> Webhooks -> Add endpoint:
-//      URL: https://xvlqixdhxvsjcowjmxyl.supabase.co/functions/v1/stripe-webhook
+//   3. Workbench -> Webhooks -> Add destination:
+//      URL: https://xvlqixdhxvsjcowjmxyl.supabase.co/functions/v1/stripe-webhook-edge-function-ts
 //      Events: checkout.session.completed, customer.subscription.updated,
 //              customer.subscription.deleted
-//      Copy the endpoint's signing secret into STRIPE_WEBHOOK_SECRET.
+//      Copy the destination's signing secret into STRIPE_WEBHOOK_SECRET.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -184,10 +202,26 @@ Deno.serve(async (req) => {
       case "customer.subscription.updated": {
         const sub = event.data.object;
         const status = sub.status === "active" ? "active" : sub.status;
-        await setStatusByCustomerId(sub.customer as string, {
-          subscription_status: status,
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-        });
+
+        // current_period_end/current_period_start moved off the top-level
+        // Subscription object as of Stripe's "Basil" API version
+        // (2025-03-31) -- this account's event destination is pinned to
+        // 2026-06-24.dahlia, well after that change, so the field must be
+        // read from the subscription item, not the subscription itself.
+        // Scriptuverse's Payment Link is single-item only, so items.data[0]
+        // is the correct (and only) item to read.
+        const fields: Record<string, unknown> = { subscription_status: status };
+        const periodEndRaw = sub.items?.data?.[0]?.current_period_end;
+        if (typeof periodEndRaw === "number") {
+          fields.current_period_end = new Date(periodEndRaw * 1000).toISOString();
+        } else {
+          console.error(
+            "[stripe-webhook] customer.subscription.updated with no items.data[0].current_period_end -- updating status only, skipping period end.",
+            sub.id,
+          );
+        }
+
+        await setStatusByCustomerId(sub.customer as string, fields);
         break;
       }
 
