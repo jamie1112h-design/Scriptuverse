@@ -1072,8 +1072,43 @@
   // ?checkout=success -- see stripe-webhook-edge-function.ts's setup
   // notes). The webhook that flips subscription_status to 'active' fires
   // asynchronously and is usually near-instant but not guaranteed to have
-  // landed before this redirect completes -- a short delay-then-recheck
-  // covers the normal case without a hard dependency on exact timing.
+  // landed before this redirect completes.
+  //
+  // FIXED (pre-launch pass): this was originally a single recheck after a
+  // fixed 2-second delay -- fine for a manual test where the webhook has
+  // already landed, but a real risk once real strangers hit checkout under
+  // promotion traffic: if the webhook took longer than 2 seconds, the user
+  // would see stale "still on trial" state until manually refreshing.
+  // Replaced with a genuine polling loop, matching PrecisionSteps'
+  // welcome.html pattern: poll every 1.5 seconds, up to 10 attempts (15
+  // seconds total), stopping as soon as subscription_status flips to
+  // active, with a graceful fallback message if it still hasn't landed
+  // after all attempts (rather than leaving the "finalizing" message up
+  // forever with no explanation).
+  async function pollForActiveSubscription(user, attempt) {
+    attempt = attempt || 1;
+    const { data, error } = await supabase
+      .from('scriptuverse_profiles')
+      .select('subscription_status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!error && data && data.subscription_status === 'active') {
+      loadProfile(user);
+      return;
+    }
+
+    if (attempt >= 10) {
+      const accessStatus = document.getElementById('accessStatus');
+      if (accessStatus) {
+        accessStatus.textContent = 'Payment received \u2014 still finalizing. This can take a little longer than usual; refresh this page in a moment, or check your email for a receipt confirming the charge went through.';
+      }
+      return;
+    }
+
+    setTimeout(() => pollForActiveSubscription(user, attempt + 1), 1500);
+  }
+
   (function handleCheckoutReturn() {
     const params = new URLSearchParams(window.location.search);
     const checkoutState = params.get('checkout');
@@ -1085,10 +1120,10 @@
         accessStatus.textContent = 'Payment received \u2014 finalizing your subscription\u2026';
         accessStatus.classList.add('attention');
       }
-      setTimeout(async () => {
+      (async () => {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) loadProfile(user);
-      }, 2000);
+        if (user) pollForActiveSubscription(user);
+      })();
     }
   })();
 </script>
