@@ -94,7 +94,22 @@
     <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
     <div class="btn-row">
       <button class="btn-primary" onclick="window.print()">Download PDF</button>
-      <button class="btn-primary" onclick="resetInstrument()">Share Something New &rarr;</button>
+      <a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Bring Another Question &ndash; Return to Instrument Selections &rarr;</a>
+    </div>
+  </div>
+
+  <!-- CRISIS-FALLBACK CHAT (ScriptBDL, decision TBD) -- entered instead of
+       screen-l2 or screen-output whenever the Edge Function reports
+       crisisDetected on a [GENERATE_LAYER2] or [GENERATE_OUTPUT] call.
+       Hard-capped at 12 AI responses (see script below); reminder/alert/
+       closing copy renders as .disclaimer-box entries inline in the
+       transcript, per Jamie's locked design. -->
+  <div id="screen-crisis-chat" class="screen">
+    <div class="crisis-transcript" id="crisis-transcript"></div>
+    <div class="crisis-input-row">
+      <textarea id="crisis-input" placeholder="Your reply&hellip;" rows="2"
+        onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendCrisisMessage();}"></textarea>
+      <button class="btn-primary" id="btn-crisis-send" onclick="sendCrisisMessage()">Send</button>
     </div>
   </div>
 
@@ -150,6 +165,27 @@
   let l2Answers = {};
 
   const EDGE_FUNCTION_NAME = 'refuge';
+  const INSTRUMENT_LABEL = 'Refuge';
+
+  // ── CRISIS-FALLBACK CHAT (ScriptBDL, decision TBD) ────────────────────────
+  // Entered whenever the Edge Function's crisisDetected flag comes back
+  // true on a [GENERATE_LAYER2] or [GENERATE_OUTPUT] call -- see
+  // enterCrisisChat() below. Hard cap of 12 AI responses total, not
+  // exchanges. Reminder/alert copy at responses 3/6/9/10, appended (never
+  // replacing) the AI's own reply; the closing message at 12 likewise
+  // appends after the AI's 12th reply, with a link back to the front door.
+  let crisisMode = false;
+  let crisisMessages = [];      // full running history resent to the model every turn
+  let crisisResponseCount = 0;  // counts AI responses only
+  const CRISIS_CAP = 12;
+
+  const CRISIS_NOTICES = {
+    3: "Quick check-in: I'm a third-party interface to an AI, not a person who can be with you right now. If this feels very urgent, please reach out to someone in your life today, or if needed, a crisis line.",
+    6: "I want to be honest with you: I'm a third-party interface to an AI, and there's a real limit to what I can hold and handle. If what you're carrying feels really heavy right now, please let a real person be a part of helping you. If that is not an option, please be aware there are crisis lines with people who will try to help you. If this is urgent, findahelpline.com can connect you to a crisis line wherever you are.",
+    9: "One more honest note: I'm not able to respond the way a person can in an emergency. If this is urgent, findahelpline.com can connect you to a crisis line wherever you are.",
+    10: "A note before we continue: we're nearing the end of what this space can hold tonight \u2013 two more responses, then this conversation will close. If what you're carrying still feels urgent, please use this time to also reach out to someone you trust or a crisis line.",
+  };
+  const CRISIS_CLOSING_TEXT = "We've reached the end of what this space can hold for tonight. What you've shared matters, and I want to say clearly: please take the next step with a real person now \u2013 a friend, a pastor, a crisis line, or your local emergency number. findahelpline.com can help you find a crisis line wherever you are. This conversation reaching its limit doesn't mean you have to stop reaching out elsewhere.";
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -219,15 +255,28 @@
     const l1Text = L1_QUESTIONS.map(q =>
       q.label + ':\n' + (l1Answers[q.id] || '(not answered)')
     ).join('\n\n');
+    const userContent = '[GENERATE_LAYER2]\n\n' + buildProfileText() + '\n\n' + l1Text;
 
     try {
       const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
         body: {
-          messages: [{ role: 'user', content: '[GENERATE_LAYER2]\n\n' + buildProfileText() + '\n\n' + l1Text }],
+          messages: [{ role: 'user', content: userContent }],
           max_tokens: 1500,
         },
       });
       if (error) throw error;
+
+      // This is the actual bug fix: previously, a crisisDetected reply here
+      // was prose, not JSON, and the JSON.parse below threw -- surfacing a
+      // raw technical error to someone the model had just engaged its
+      // trained crisis-response behavior for. The Edge Function now reports
+      // crisisDetected explicitly, so this is checked BEFORE JSON.parse is
+      // ever attempted, not inferred from a parse failure.
+      if (data.crisisDetected) {
+        enterCrisisChat([{ role: 'user', content: userContent }], data.reply);
+        return;
+      }
+
       const parsed = JSON.parse(data.reply.trim().replace(/```json|```/g, '').trim());
       l2Questions = parsed.questions;
       buildL2(l2Questions);
@@ -246,19 +295,26 @@
     const l2Text = l2Questions.map(q =>
       'Q: ' + q.text + '\nA: ' + (l2Answers[q.id] || '(not answered)')
     ).join('\n\n');
+    const userContent = '[GENERATE_OUTPUT]\n\n' + buildProfileText() +
+      '\n\nLAYER 1:\n' + l1Text + '\n\nLAYER 2:\n' + l2Text;
 
     try {
       const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
         body: {
-          messages: [{
-            role: 'user',
-            content: '[GENERATE_OUTPUT]\n\n' + buildProfileText() +
-              '\n\nLAYER 1:\n' + l1Text + '\n\nLAYER 2:\n' + l2Text,
-          }],
+          messages: [{ role: 'user', content: userContent }],
           max_tokens: 4000,
         },
       });
       if (error) throw error;
+
+      // Same fix as submitL1: a crisis-detected Output call is prose meant
+      // for the crisis-chat screen, not markdown meant for the Output
+      // Galaxy renderer -- checked explicitly, not inferred.
+      if (data.crisisDetected) {
+        enterCrisisChat([{ role: 'user', content: userContent }], data.reply);
+        return;
+      }
+
       renderOutput(data.reply);
       showScreen('screen-output');
     } catch (err) {
@@ -271,8 +327,121 @@
     document.getElementById('output-body').innerHTML = marked.parse(text);
   }
 
+  // ── CRISIS-FALLBACK CHAT -- helpers ───────────────────────────────────────
+  function appendCrisisMessage(role, text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'crisis-msg ' + (role === 'user' ? 'crisis-msg-user' : 'crisis-msg-ai');
+    const label = document.createElement('div');
+    label.className = 'crisis-msg-label';
+    label.textContent = role === 'user' ? 'You' : INSTRUMENT_LABEL;
+    const body = document.createElement('div');
+    body.className = 'crisis-msg-body';
+    body.innerHTML = marked.parse(text);
+    wrap.appendChild(label);
+    wrap.appendChild(body);
+    const container = document.getElementById('crisis-transcript');
+    container.appendChild(wrap);
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  // Renders the locked reminder/alert/closing copy in a box styled exactly
+  // like .disclaimer-box (Jamie's explicit instruction), inline in the
+  // transcript at the point it occurred -- not a popup, not a replacement
+  // of the AI's own reply.
+  function appendCrisisBox(text, withReturnLink) {
+    const box = document.createElement('div');
+    box.className = 'disclaimer-box crisis-alert';
+    box.innerHTML = '<p>' + text + '</p>' +
+      (withReturnLink
+        ? '<div class="crisis-box-link"><a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Return to Instrument Selections</a></div>'
+        : '');
+    const container = document.getElementById('crisis-transcript');
+    container.appendChild(box);
+    box.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  // Called after every AI response is appended to the transcript, including
+  // the very first one. Checks the current response count against the
+  // locked schedule (3/6/9/10 reminders, 12 hard close) and renders
+  // whatever box applies -- at most one box per response.
+  function handleCrisisResponseCount() {
+    if (CRISIS_NOTICES[crisisResponseCount]) {
+      appendCrisisBox(CRISIS_NOTICES[crisisResponseCount], false);
+    }
+    if (crisisResponseCount >= CRISIS_CAP) {
+      appendCrisisBox(CRISIS_CLOSING_TEXT, true);
+      const input = document.getElementById('crisis-input');
+      const btn = document.getElementById('btn-crisis-send');
+      input.disabled = true;
+      input.placeholder = 'This conversation has reached its limit for tonight.';
+      btn.disabled = true;
+    }
+  }
+
+  // Entry point -- called from submitL1/submitL2 in place of their normal
+  // JSON-parse / renderOutput path whenever data.crisisDetected is true.
+  // seedMessages carries the original [GENERATE_LAYER2]/[GENERATE_OUTPUT]
+  // user turn so later replies keep real context; firstReply is that same
+  // call's already-generated crisis-response text -- it is never
+  // regenerated or discarded, only displayed here instead of being run
+  // through JSON.parse or the Output Galaxy renderer.
+  function enterCrisisChat(seedMessages, firstReply) {
+    crisisMode = true;
+    crisisMessages = seedMessages.concat([{ role: 'assistant', content: firstReply }]);
+    crisisResponseCount = 1;
+    document.getElementById('crisis-transcript').innerHTML = '';
+    document.getElementById('crisis-input').disabled = false;
+    document.getElementById('btn-crisis-send').disabled = false;
+    document.getElementById('crisis-input').placeholder = 'Your reply\u2026';
+    appendCrisisMessage('assistant', firstReply);
+    handleCrisisResponseCount();
+    showScreen('screen-crisis-chat');
+  }
+
+  window.sendCrisisMessage = async function() {
+    const input = document.getElementById('crisis-input');
+    const btn = document.getElementById('btn-crisis-send');
+    const text = input.value.trim();
+    if (!text || crisisResponseCount >= CRISIS_CAP) return;
+
+    input.disabled = true;
+    btn.disabled = true;
+
+    appendCrisisMessage('user', text);
+    crisisMessages.push({ role: 'user', content: text });
+    input.value = '';
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: { messages: crisisMessages, max_tokens: 1500 },
+      });
+      if (error) throw error;
+
+      crisisMessages.push({ role: 'assistant', content: data.reply });
+      crisisResponseCount++;
+      appendCrisisMessage('assistant', data.reply);
+      handleCrisisResponseCount();
+    } catch (err) {
+      appendCrisisBox('Something went wrong sending that. Please try again.', false);
+    } finally {
+      if (crisisResponseCount < CRISIS_CAP) {
+        input.disabled = false;
+        btn.disabled = false;
+        input.focus();
+      }
+    }
+  };
+
+  // No longer called from any button as of this session -- screen-output's
+  // former "Share Something New" reset-in-place behavior was replaced with
+  // a real navigation to index.html (Instrument Selection), per Jamie's
+  // decision that every "I have something new to bring" moment should
+  // return to the instrument-choice page rather than assume the same
+  // instrument again. Left defined, not deleted, in case anything else
+  // comes to rely on an in-page reset later.
   window.resetInstrument = function() {
     l1Answers = {}; l2Questions = []; l2Answers = {};
+    crisisMode = false; crisisMessages = []; crisisResponseCount = 0;
     document.querySelectorAll('textarea').forEach(t => t.value = '');
     document.getElementById('l1-counter').textContent = '0 / ' + L1_QUESTIONS.length;
     document.getElementById('l1-bar').style.width = '0%';

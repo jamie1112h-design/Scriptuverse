@@ -253,6 +253,66 @@ html, body {
   letter-spacing: 0.5px;
 }
 
+/* ── CRISIS-FALLBACK CHAT (ScriptBDL, decision TBD) -- the open-ended
+   conversational screen a person lands in when the model's trained
+   crisis-response behavior engages during Layer 2 intake or Output
+   generation. Reuses .disclaimer-box as-is for the three reminder texts,
+   the two-remaining alert, and the closing message (Jamie's explicit
+   instruction: a distinct styled box like .disclaimer-box, not a new
+   component) -- only the transcript bubbles and input row below are new. ── */
+.crisis-transcript {
+  display: flex; flex-direction: column; gap: 16px;
+  margin-bottom: 20px;
+}
+.crisis-msg-label {
+  font-family: 'Google Sans', Arial, sans-serif;
+  font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 6px;
+}
+.crisis-msg-ai .crisis-msg-body {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-family: 'PT Serif', serif; font-size: 18px; line-height: 1.6;
+  color: var(--ink);
+}
+.crisis-msg-user .crisis-msg-body {
+  background: rgba(176,120,64,0.10);
+  border: 1px solid rgba(176,120,64,0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: 'PT Serif', serif; font-size: 17px;
+  color: var(--ink-mid);
+}
+.crisis-input-row {
+  display: flex; gap: 10px; align-items: flex-end;
+  margin-top: 8px;
+}
+.crisis-input-row textarea {
+  flex: 1;
+  font-family: 'PT Serif', serif; font-size: 17px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(155,120,65,0.25);
+  border-radius: 6px;
+  color: var(--ink);
+  resize: vertical;
+}
+.crisis-box-link { margin-top: 14px; }
+
+/* Option A, locked -- the five crisis-fallback boxes (reminders at 3/6/9,
+   alert at 10, closing at 12) are action items, not passive disclaimers,
+   so their text renders in the platform's action-blue treatment (BIS 2.3),
+   same principle as .action-label. Scoped to .crisis-alert specifically --
+   NOT a global change to .disclaimer-box, which still renders in plain ink
+   everywhere else it's used (the tradition disclaimer, the sign-in
+   notice) -- those are not action items and should not read as one. */
+.disclaimer-box.crisis-alert p {
+  color: var(--blue);
+  font-weight: 700;
+}
+
 /* ── PRINT / PDF (Decision 113) -- restored 2026-07-08. Confirmed missing
    from the working copy of this file via Refuge's own first live PDF
    export (Decision 118), where .btn-row and .hero were visibly present
