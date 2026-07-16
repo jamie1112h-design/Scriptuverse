@@ -319,7 +319,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ reply: cleanedReply }), {
+    // crisisDetected is now returned alongside reply -- per the crisis-
+    // fallback build (ScriptBDL, decision TBD), the frontend needs an
+    // explicit, reliable signal to branch into crisis-chat mode rather
+    // than inferring a crisis turn from a failed JSON.parse on a
+    // [GENERATE_LAYER2] call. This was already being computed above; it
+    // was simply never surfaced past this point.
+    return new Response(JSON.stringify({ reply: cleanedReply, crisisDetected }), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
 
