@@ -230,7 +230,21 @@ Deno.serve(async (req) => {
     // A session is only "spent" on the call that actually produces the
     // brief -- GENERATE_LAYER2 (the adaptive follow-up questions) is free,
     // same as HM's own single decrement point. See decrementTrialUseIfNeeded above.
-    const isOutputCall = typeof messages?.[0]?.content === "string"
+    //
+    // FIX (same root cause and same fix as refuge-edge-function.ts, applied
+    // 2026-07-19): the crisis-fallback chat (Decision 178) resends the
+    // ENTIRE growing message array every turn, and messages[0] is
+    // permanently the original seed turn -- so if that seed was a
+    // [GENERATE_OUTPUT] call that got diverted into crisis chat, the old
+    // check below matched on every single subsequent reply in that
+    // conversation, silently decrementing trial_uses_remaining once per
+    // crisis-chat turn instead of once per session. Requiring
+    // messages.length === 1 restricts the match to the original one-shot
+    // call only -- true on the very first submitL2() request (a lone user
+    // turn), never true again once a second message has been appended,
+    // which is exactly when a crisis-chat continuation begins.
+    const isOutputCall = messages.length === 1
+      && typeof messages?.[0]?.content === "string"
       && messages[0].content.startsWith("[GENERATE_OUTPUT]");
 
     // ── EMPTY-REPLY RETRY LADDER ──────────────────────────────────────────
