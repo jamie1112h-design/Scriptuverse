@@ -494,7 +494,7 @@
      the shared default reads as too much space above (56px here, plus
      .how-it-works' own 56px bottom padding -- 112px combined) and none
      below. Overridden here rather than in the shared file so Counsel
-     and Refuge are unaffected. */
+     and Comfort are unaffected. */
   .footer-identifier {
     margin-top: 24px;
     margin-bottom: 40px;
@@ -957,9 +957,9 @@
 
   // ── STRIPE / TRIAL ACCESS GATING ──────────────────────────────────────
   // Per Decision 28: subscription/persistence logic belongs at the suite
-  // front door, not inside each instrument -- Counsel and Refuge's own
+  // front door, not inside each instrument -- Counsel and Comfort's own
   // pages carry no paywall screen of their own by design. This is that
-  // gate. Scoped to the two live tiles (Counsel, Refuge); Reflection and
+  // gate. Scoped to the two live tiles (Counsel, Comfort); Joy and
   // Study stay "Coming Soon" until they exist.
   //
   // REWRITTEN 2026-07-08 to clone HM's actual validated Stripe pattern
@@ -1008,7 +1008,7 @@
     finePrint.classList.toggle('veteran', !stillPitching);
 
     if (profile.subscription_status === 'active') {
-      accessStatus.textContent = 'Subscribed \u00b7 Full Access to Counsel and Refuge.';
+      accessStatus.textContent = 'Subscribed \u00b7 Full Access to Counsel and Comfort.';
     } else if (granted) {
       const remaining = profile.trial_uses_remaining ?? 0;
       accessStatus.textContent = remaining + (remaining === 1 ? ' Free Session Remaining.' : ' Free Sessions Remaining.');
@@ -1029,7 +1029,7 @@
     }
 
     wireInstrumentTile('tile-cta-counsel', 'counsel-instrument.html', granted);
-    wireInstrumentTile('tile-cta-refuge', 'refuge-instrument.html', granted);
+    wireInstrumentTile('tile-cta-comfort', 'comfort-instrument.html', granted);
   }
 
   function wireInstrumentTile(ctaId, targetPage, granted) {
@@ -1042,7 +1042,7 @@
       // pattern (BIS Section 3.5), a session is only spent at the moment
       // a real Output is generated, not at the moment someone opens the
       // door. That decrement now lives inside counsel-edge-function.ts
-      // and refuge-edge-function.ts themselves, on a successful
+      // and comfort-edge-function.ts themselves, on a successful
       // GENERATE_OUTPUT call, using the already-authenticated Shape B
       // user -- see those files' own notes on this.
       cta.onclick = () => { window.location.href = targetPage; };
@@ -1135,6 +1135,45 @@
 
   <div class="grid top">
 
+    <!-- JOY -->
+    <details class="tile tile-static" open>
+      <summary onclick="event.preventDefault();">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="4.5"/>
+          <path d="M12 2.5 L12 5.5 M12 18.5 L12 21.5 M2.5 12 L5.5 12 M18.5 12 L21.5 12 M5.11 5.11 L7.34 7.34 M16.66 16.66 L18.89 18.89 M5.11 18.89 L7.34 16.66 M16.66 7.34 L18.89 5.11" stroke-linecap="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Uplifting &middot; Hope</div>
+          <div class="tile-name">Joy</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <div class="tile-desc">Come when you want to reconnect with gratitude, peace, hope or the goodness of God. Joy brings forward scripture that can lift your attention to what is sustaining, beautiful, and worth rejoicing in.</div>
+        <div class="tile-cta" id="tile-cta-joy">Coming Soon</div>
+      </div>
+    </details>
+
+    <!-- STUDY -->
+    <details class="tile tile-static" open>
+      <summary onclick="event.preventDefault();">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M4 5 C4 5 8 3 12 5 C16 3 20 5 20 5 L20 19 C20 19 16 17 12 19 C8 17 4 19 4 19 Z M12 5 L12 19" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Inquiry &middot; Understanding</div>
+          <div class="tile-name">Study</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <div class="tile-desc">Bring a question, biblical theme, doctrine, or passage you want to understand more deeply. Study examines it with context, interpretation, and scripture grounded in your own tradition.</div>
+        <div class="tile-cta" id="tile-cta-study">Coming Soon</div>
+      </div>
+    </details>
+
+  </div>
+
+  <div class="grid">
+
     <!-- COUNSEL -->
     <details class="tile tile-static" open>
       <summary onclick="event.preventDefault();">
@@ -1147,72 +1186,25 @@
         </div>
       </summary>
       <div class="tile-body">
-        <div class="tile-desc">Bring a decision or a tension you're sitting with. Counsel walks through it with you and answers from your own tradition's scripture.</div>
+        <div class="tile-desc">Bring a decision, tension, or conflict you're sitting with. Counsel walks through it with you and responds from your own tradition's scripture.</div>
         <div class="tile-cta" id="tile-cta-counsel">Enter Counsel <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
     </details>
 
-    <!-- REFUGE -->
+    <!-- COMFORT (formerly Refuge) -->
     <details class="tile tile-static" open>
       <summary onclick="event.preventDefault();">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
           <path d="M4 20 L4 11 L12 4 L20 11 L20 20 Z M9 20 L9 14 L15 14 L15 20" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <div class="tile-headline">
-          <div class="tile-eyebrow">Presence &middot; Accompaniment</div>
-          <div class="tile-name">Refuge</div>
+          <div class="tile-eyebrow">Presence &middot; Solace</div>
+          <div class="tile-name">Comfort</div>
         </div>
       </summary>
       <div class="tile-body">
-        <div class="tile-desc">For anxiety, grief, or the felt distance from God. Refuge meets you there to offer comfort and scripture-based resolution.</div>
-        <div class="tile-cta" id="tile-cta-refuge">Enter Refuge <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      </div>
-    </details>
-
-  </div>
-
-  <div class="ornamental-divider">
-    <span class="line"></span>
-    <span class="mark"><span class="diamond"></span>In Development<span class="diamond"></span></span>
-    <span class="line right"></span>
-  </div>
-
-  <div class="grid">
-
-    <!-- REFLECTION -->
-    <details class="tile is-pending">
-      <summary>
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-          <circle cx="12" cy="12" r="8"/>
-          <path d="M12 8 L12 12 L15 14" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div class="tile-headline">
-          <div class="tile-eyebrow">Practice &middot; Renewal</div>
-          <div class="tile-name">Reflection</div>
-        </div>
-      </summary>
-      <div class="tile-body">
-        <span class="status-corner pending">In Development</span>
-        <div class="tile-desc">A recurring rhythm of noticing where you were formed, and where you're still becoming.</div>
-        <div class="tile-cta">Coming Soon</div>
-      </div>
-    </details>
-
-    <!-- STUDY -->
-    <details class="tile is-pending">
-      <summary>
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-          <path d="M4 5 C4 5 8 3 12 5 C16 3 20 5 20 5 L20 19 C20 19 16 17 12 19 C8 17 4 19 4 19 Z M12 5 L12 19" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div class="tile-headline">
-          <div class="tile-eyebrow">Passage &middot; Scholarship</div>
-          <div class="tile-name">Study</div>
-        </div>
-      </summary>
-      <div class="tile-body">
-        <span class="status-corner pending">In Development</span>
-        <div class="tile-desc">Go deeper on a passage, theme, or doctrine &ndash; for when you're seeking understanding, not resolution.</div>
-        <div class="tile-cta">Coming Soon</div>
+        <div class="tile-desc">For anxiety, grief, loneliness, or a felt distance from God. Comfort meets you where you are with reassurance, perspective, and scripture suited to what you're carrying.</div>
+        <div class="tile-cta" id="tile-cta-comfort">Enter Comfort <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
     </details>
 
@@ -1231,7 +1223,7 @@
     <div class="how-step">
       <div class="how-step-number">02</div>
       <div class="how-step-title">Choose an Instrument</div>
-      <div class="how-step-desc">Counsel for a decision, Refuge for grief or fear.</div>
+      <div class="how-step-desc">Counsel for a decision, Comfort for grief or fear.</div>
     </div>
     <div class="how-step">
       <div class="how-step-number">03</div>
