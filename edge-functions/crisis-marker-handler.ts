@@ -53,7 +53,7 @@ const CRISIS_MARKER = "[[SV_CRISIS]]";
  *     id uuid primary key default gen_random_uuid(),
  *     occurred_at timestamptz not null default now(),
  *     session_id text not null,        -- pseudonymous, not the person's name/email
- *     instrument text not null         -- 'counsel' | 'refuge' | 'reflection' | 'study'
+ *     instrument text not null         -- 'counsel' | 'comfort' | 'joy' | 'study'
  *   );
  *
  * No other columns. No foreign key to a content or message table. This is a
@@ -180,7 +180,7 @@ export function processCrisisMarker(rawReply: string): CrisisMarkerResult {
 export async function logCrisisEvent(
   supabase: SupabaseClient,
   sessionId: string,
-  instrument: "counsel" | "refuge" | "reflection" | "study",
+  instrument: "counsel" | "comfort" | "joy" | "study",
 ): Promise<void> {
   const { error } = await supabase.from(CRISIS_EVENTS_TABLE).insert({
     session_id: sessionId,
@@ -345,17 +345,18 @@ export async function logCrisisEvent(
 //    unstripped marker into client-visible network traffic regardless of
 //    what the rendered UI displays.
 //
-// 3. The instrument name ("counsel", "refuge", "reflection", "study") should
+// 3. The instrument name ("counsel", "comfort", "joy", "study") should
 //    be hardcoded per Edge Function file, not derived dynamically -- each
 //    instrument has its own Edge Function per the confirmed Human Mastery
 //    pattern (one function per instrument: parenting, relationships,
 //    personal-support), so each file always knows which instrument it is.
 //
-// 4. Per Decision 66's confirmed build order, only Counsel's and Refuge's
-//    Edge Functions need this wired in for first build. Reflection's and
-//    Study's integration happens when those instruments enter active build
-//    -- this module itself is already suite-wide and needs no changes when
-//    that happens, only the two additional integration-point call sites.
+// 4. Per Decision 66's confirmed build order, only Counsel's and Comfort's
+//    (formerly Refuge) Edge Functions need this wired in for first build.
+//    Joy's and Study's integration happens when those instruments enter
+//    active build -- this module itself is already suite-wide and needs
+//    no changes when that happens, only the two additional
+//    integration-point call sites.
 //
 // 5. REMAINING OPEN ITEM, not resolved by Decision 72: confirmation that
 //    any model string used in Scriptuverse's actual deployed code matches

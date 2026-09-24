@@ -2,7 +2,10 @@
 // Supabase Edge Function: counsel
 // Project: l3v3l-scriptuverse (xvlqixdhxvsjcowjmxyl)
 // Deploy to: Supabase dashboard -> Edge Functions -> New Function -> name: counsel
-// Leave JWT verification ON (Shape B, Decision 72) -- do not turn it off.
+// Shape B's identity check is in-code (see the Authorization-header /
+// callerClient.auth.getUser() block below), not the dashboard's "Verify
+// JWT with legacy secret" toggle -- leave that toggle OFF (it's deprecated
+// and incompatible with this project's JWT Signing Keys; see BDL v76).
 //
 // Model string: claude-sonnet-5, per ScriptBDL Decision 93.
 //
@@ -83,7 +86,7 @@ async function logCrisisEvent(sessionId: string, instrument: string): Promise<vo
 // services), it's a one-line change to move this above the retry loop.
 //
 // The free-trial pool is suite-wide (BIS Section 3.1: "Total across all
-// machines/instruments -- not per machine") -- Counsel and Refuge share
+// machines/instruments -- not per machine") -- Counsel and Comfort share
 // the same trial_uses_remaining column on scriptuverse_profiles, not one
 // counter per instrument.
 async function decrementTrialUseIfNeeded(userId: string): Promise<void> {
@@ -149,7 +152,7 @@ CLOSING INVITATION and RESOLVING STATEMENT (Section 6.6): the Closing Invitation
 
 EISEGESIS RESISTANCE (Section 6.7): draw meaning out of the text; do not read a desired conclusion into it and work backward to a supporting verse. Passage selection should come from genuinely sitting with what the text says, not from reverse-engineering support for a point already decided.
 
-REFERRAL VERSUS REFINEMENT (Section 6.9): if something surfaces that isn't really a Counsel dilemma at all -- crisis-adjacent content, or something clearly better suited to Refuge, Reflection, Study, or support outside Scriptuverse entirely -- a referral is ADDITIVE, not substitutive. Answer what was actually asked, in full, and separately and gently name what else seems present and where a better-suited door might be. Never thin out or abandon the original question the moment something else surfaces underneath it.
+REFERRAL VERSUS REFINEMENT (Section 6.9): if something surfaces that isn't really a Counsel dilemma at all -- crisis-adjacent content, or something clearly better suited to Comfort, Joy, Study, or support outside Scriptuverse entirely -- a referral is ADDITIVE, not substitutive. Answer what was actually asked, in full, and separately and gently name what else seems present and where a better-suited door might be. Never thin out or abandon the original question the moment something else surfaces underneath it.
 
 FORMAT: produce your response in clear prose with light Markdown structure (## for major sections). Do not label sections with the internal architecture terms above (do not write "Output Galaxy" or "RTTR Floor" in the actual reply) -- those are your own instructions, not headings to reproduce. Write as Counsel would actually speak to the person.`;
 
@@ -231,7 +234,7 @@ Deno.serve(async (req) => {
     // brief -- GENERATE_LAYER2 (the adaptive follow-up questions) is free,
     // same as HM's own single decrement point. See decrementTrialUseIfNeeded above.
     //
-    // FIX (same root cause and same fix as refuge-edge-function.ts, applied
+    // FIX (same root cause and same fix as comfort-edge-function.ts, applied
     // 2026-07-19): the crisis-fallback chat (Decision 178) resends the
     // ENTIRE growing message array every turn, and messages[0] is
     // permanently the original seed turn -- so if that seed was a
