@@ -122,13 +122,13 @@
       id: 'tension',
       label: 'The Tension',
       text: "What's the tension, decision, or question you're bringing today?",
-      hint: 'Describe what\u2019s actually going on \u2014 the situation, and what makes it hard.'
+      hint: 'Describe what\u2019s actually going on \u2013 the situation, and what makes it hard.'
     },
     {
       id: 'feeling',
       label: 'How You\u2019re Feeling',
       text: 'How are you feeling about this right now?',
-      hint: 'However it actually feels \u2014 there\u2019s no right answer here.'
+      hint: 'However it actually feels \u2013 there\u2019s no right answer here.'
     },
     {
       id: 'stakeholders',
@@ -140,7 +140,7 @@
       id: 'desired_outcome',
       label: 'What You\u2019re Hoping For',
       text: 'What would a good resolution actually look like to you?',
-      hint: 'Not necessarily what you think is realistic \u2014 what you\u2019re actually hoping for.'
+      hint: 'Not necessarily what you think is realistic \u2013 what you\u2019re actually hoping for.'
     },
   ];
 
@@ -216,7 +216,7 @@
       card.className = 'q-card';
       card.innerHTML = `
         <div class="q-number">Going Deeper &middot; ${i + 1}</div>
-        <div class="q-text">${q.text}</div>
+        <div class="q-text">${enDash(q.text)}</div>
         <textarea id="l2_${q.id}" placeholder="Your answer\u2026" rows="3" oninput="window.updateL2('${q.id}', this.value)"></textarea>
       `;
       container.appendChild(card);
@@ -310,8 +310,18 @@
     }
   };
 
+  // Display-only em dash guard (ScriptBDL Decision 188): the platform rule is
+  // en dash, never em dash, in anything a subscriber sees. Model replies are
+  // not always obedient on this, so every piece of model text shown on
+  // screen or printed to PDF passes through here first. The text resent to
+  // the model (crisis-chat history, Layer 2 answers) is deliberately left
+  // untouched -- this changes what is displayed, never what is sent.
+  function enDash(text) {
+    return String(text).replace(/\u2014/g, '\u2013');
+  }
+
   function renderOutput(text) {
-    document.getElementById('output-body').innerHTML = marked.parse(text);
+    document.getElementById('output-body').innerHTML = marked.parse(enDash(text));
   }
 
   // ── CRISIS-FALLBACK CHAT -- helpers ───────────────────────────────────────
@@ -323,7 +333,7 @@
     label.textContent = role === 'user' ? 'You' : INSTRUMENT_LABEL;
     const body = document.createElement('div');
     body.className = 'crisis-msg-body';
-    body.innerHTML = marked.parse(text);
+    body.innerHTML = marked.parse(enDash(text));
     wrap.appendChild(label);
     wrap.appendChild(body);
     const container = document.getElementById('crisis-transcript');
@@ -501,11 +511,11 @@
 
     const PREFILL_L1 = {
       tension: 'This is a test entry to confirm the intake flow is working correctly.',
-      feeling: 'Neutral \u2014 this is a functional test, not a real submission.',
-      stakeholders: 'No one \u2014 this is a test entry only.',
+      feeling: 'Neutral \u2013 this is a functional test, not a real submission.',
+      stakeholders: 'No one \u2013 this is a test entry only.',
       desired_outcome: 'Confirming that the flow proceeds correctly to the next screen.',
     };
-    const PREFILL_L2_ANSWER = 'Testing prefill \u2014 placeholder answer for mechanics testing only.';
+    const PREFILL_L2_ANSWER = 'Testing prefill \u2013 placeholder answer for mechanics testing only.';
 
     // Poll for Layer 1 fields rather than assuming a fixed race against
     // init()'s own awaited Supabase calls -- init() only calls buildL1()

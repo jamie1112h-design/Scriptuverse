@@ -214,7 +214,7 @@
         <div class="q-text"></div>
         <textarea id="l2_${q.id}" placeholder="Your answer\u2026" rows="3" oninput="window.updateL2('${q.id}', this.value)"></textarea>
       `;
-      card.querySelector('.q-text').textContent = q.text;
+      card.querySelector('.q-text').textContent = enDash(q.text);
       container.appendChild(card);
     });
     document.getElementById('l2-counter').textContent = '0 / ' + questions.length;
@@ -325,8 +325,18 @@
     }
   }
 
+  // Display-only em dash guard (ScriptBDL Decision 188): the platform rule is
+  // en dash, never em dash, in anything a subscriber sees. Model replies are
+  // not always obedient on this, so every piece of model text shown on
+  // screen or printed to PDF passes through here first. The text resent to
+  // the model (crisis-chat history, Layer 2 answers) is deliberately left
+  // untouched -- this changes what is displayed, never what is sent.
+  function enDash(text) {
+    return String(text).replace(/\u2014/g, '\u2013');
+  }
+
   function renderOutput(text) {
-    document.getElementById('output-body').innerHTML = marked.parse(text);
+    document.getElementById('output-body').innerHTML = marked.parse(enDash(text));
   }
 
   (async function init() {
