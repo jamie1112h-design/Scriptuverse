@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study &ndash; Scriptuverse</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<link rel="stylesheet" href="scriptuverse-shared.css">
+<style>
+  /* Study-specific overrides only. Everything else (colors, header, hero,
+     buttons, cards, progress bar, loading state, output rendering) comes
+     from scriptuverse-shared.css -- do not re-add copies of those rules
+     here. If a future fix needs to change something that isn't
+     Study-specific, fix it in the shared file, not here.
+
+     The one override below exists because Layer 1 is the only screen in
+     the suite that carries two side-by-side buttons (Continue and Quick
+     Response) -- a flex row with a gap keeps them evenly spaced and lets
+     them stack cleanly on a narrow phone screen. */
+  .btn-row {
+    display: flex; gap: 14px;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .quick-note {
+    text-align: center;
+    margin-top: 14px; margin-bottom: 0;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">SCRIPTUVERSE</a>
+  <div class="suite-label">Study</div>
+</header>
+
+<div class="hero">
+  <div class="instrument-name">Study</div>
+  <div class="instrument-tagline">Understand Scripture&rsquo;s meaning, history, and interpretation, grounded in your own tradition.</div>
+</div>
+
+<main class="main">
+
+  <div id="screen-not-signed-in" class="screen">
+    <div class="disclaimer-box">You need to sign in and complete your tradition profile at the Scriptuverse front door before using Study.</div>
+    <div class="btn-row"><a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Go to Front Door</a></div>
+  </div>
+
+  <div id="screen-l1" class="screen">
+
+    <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
+
+    <div class="status-line" id="profileStatus"></div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Your Study Question</span><span id="l1-counter">0 / 3</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="l1-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="action-label">Please provide your answers to these questions.</div>
+
+    <div id="l1-questions"></div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-l1-next" onclick="submitL1()" disabled>Continue &rarr;</button>
+      <button class="btn-primary" id="btn-l1-quick" onclick="quickResponse()" disabled>Quick Response</button>
+    </div>
+    <div class="q-hint quick-note">Quick Response skips the follow-up questions and goes straight to your study.</div>
+
+    <div class="footer-identifier">SCRIPTUVERSE &middot; Study</div>
+  </div>
+
+  <div id="screen-loading-l2" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Reading Your Question</div>
+      <div class="loading-sub">Considering what you asked&hellip;</div>
+    </div>
+  </div>
+
+  <div id="screen-l2" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Sharpening the Question</span><span id="l2-counter">0 / 0</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="l2-bar" style="width:0%"></div></div>
+    </div>
+    <div id="l2-questions"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-l2-next" onclick="submitL2()" disabled>Receive Study &rarr;</button>
+    </div>
+  </div>
+
+  <div id="screen-loading-output" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Preparing Your Study</div>
+      <div class="loading-sub">Examining the text &middot; Gathering the traditions&hellip;</div>
+    </div>
+  </div>
+
+  <div id="screen-output" class="screen">
+    <div class="output-body" id="output-body"></div>
+    <hr class="section-divider">
+    <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="window.print()">Download PDF</button>
+      <a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Bring Another Question &ndash; Return to Instrument Selections &rarr;</a>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://xvlqixdhxvsjcowjmxyl.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_CyR3UVVvOtrFziL4nI9mtA_3x2g4JgS';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Study's Layer 1 is three scholarly questions. Study is a scholarship
+  // instrument (meaning, history, and philosophy embedded in Scripture), so
+  // it deliberately asks nothing about feelings, emotions, or personal
+  // circumstances -- those belong to Counsel, Comfort, and Joy. Wording of
+  // Q1 and Q2 follows the Specification's Study wording pass; Q3 replaces
+  // the feeling and stakeholder questions and carries what the person has
+  // already read or heard. The model infers entry mode (passage, theme, or
+  // doctrine) and desired depth from Q1 and Q2; there are no selectors.
+  const L1_QUESTIONS = [
+    {
+      id: 'subject',
+      label: 'What You\u2019d Like to Study',
+      text: 'What passage, theme, or doctrine would you like to study?',
+      hint: 'A verse or passage, a theme across Scripture, or a teaching you want to understand.'
+    },
+    {
+      id: 'help',
+      label: 'What Would Help',
+      text: 'What would help you understand this more clearly?',
+      hint: 'Meaning, historical background, original-language wording, how traditions read it \u2013 and how deep you\u2019d like to go.'
+    },
+    {
+      id: 'prior',
+      label: 'What You\u2019ve Already Read',
+      text: 'What have you already read or heard on this?',
+      hint: 'A book, commentary, sermon, or view you\u2019ve come across \u2013 or nothing yet.'
+    },
+  ];
+
+  // Layer 2 is capped at three questions in code as well as in the Edge
+  // Function's prompt -- the prompt asks only for what is still needed
+  // (genuine inference, ScriptBDL Decision 24), this slice enforces the cap.
+  const L2_MAX_QUESTIONS = 3;
+
+  let profile = null;
+  let l1Answers = {};
+  let l2Questions = [];
+  let l2Answers = {};
+
+  const EDGE_FUNCTION_NAME = 'study';
+
+  // Study carries no crisis-fallback chat, no crisis marker, and no crisis
+  // logging, by Jamie's explicit instruction (an exception to ScriptBDL
+  // Decision 50, as Joy is an exception under Decision 184). Counsel's and
+  // Comfort's crisis-chat screen, state, and helpers are deliberately NOT
+  // cloned here.
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function buildProfileText() {
+    return 'FIXED PROFILE:\nDenomination: ' + (profile.denomination || 'Not specified') +
+      (profile.denomination_note ? ' (' + profile.denomination_note + ')' : '') +
+      '\nBible version: ' + (profile.bible_version || 'KJV');
+  }
+
+  function buildL1Text() {
+    return L1_QUESTIONS.map(q =>
+      q.label + ':\n' + (l1Answers[q.id] || '(not answered)')
+    ).join('\n\n');
+  }
+
+  function buildL1() {
+    const container = document.getElementById('l1-questions');
+    container.innerHTML = '';
+    L1_QUESTIONS.forEach(q => {
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.innerHTML = `
+        <div class="q-number">${q.label}</div>
+        <div class="q-text">${q.text}</div>
+        <div class="q-hint">${q.hint}</div>
+        <textarea id="${q.id}" placeholder="Your answer\u2026" rows="3" oninput="window.updateL1('${q.id}', this.value)"></textarea>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  window.updateL1 = function(id, value) {
+    if (value.trim()) { l1Answers[id] = value.trim(); } else { delete l1Answers[id]; }
+    const count = Object.keys(l1Answers).length;
+    const complete = count >= L1_QUESTIONS.length;
+    document.getElementById('l1-counter').textContent = count + ' / ' + L1_QUESTIONS.length;
+    document.getElementById('l1-bar').style.width = (count / L1_QUESTIONS.length * 100) + '%';
+    // Continue and Quick Response unlock together -- same completeness
+    // gate, two different routes out of Layer 1.
+    document.getElementById('btn-l1-next').disabled = !complete;
+    document.getElementById('btn-l1-quick').disabled = !complete;
+  };
+
+  function buildL2(questions) {
+    const container = document.getElementById('l2-questions');
+    container.innerHTML = '';
+    questions.forEach((q, i) => {
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.innerHTML = `
+        <div class="q-number">Sharpening &middot; ${i + 1}</div>
+        <div class="q-text"></div>
+        <textarea id="l2_${q.id}" placeholder="Your answer\u2026" rows="3" oninput="window.updateL2('${q.id}', this.value)"></textarea>
+      `;
+      card.querySelector('.q-text').textContent = enDash(q.text);
+      container.appendChild(card);
+    });
+    document.getElementById('l2-counter').textContent = '0 / ' + questions.length;
+    // Prefill acceleration hook -- see the prefillIfRequested block near
+    // the end of this script for why this fires from inside buildL2
+    // itself rather than via a window.buildL2 override.
+    if (window.__prefillL2Hook) window.__prefillL2Hook(questions);
+  }
+
+  window.updateL2 = function(id, value) {
+    if (value.trim()) { l2Answers[id] = value.trim(); } else { delete l2Answers[id]; }
+    const count = Object.keys(l2Answers).length;
+    document.getElementById('l2-counter').textContent = count + ' / ' + l2Questions.length;
+    document.getElementById('l2-bar').style.width = (count / l2Questions.length * 100) + '%';
+    document.getElementById('btn-l2-next').disabled = count < 1;
+  };
+
+  // Continue -- the normal route: Layer 1 -> adaptive Layer 2 -> Output.
+  window.submitL1 = async function() {
+    showScreen('screen-loading-l2');
+    const userContent = '[GENERATE_LAYER2]\n\n' + buildProfileText() + '\n\n' + buildL1Text();
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: {
+          messages: [{ role: 'user', content: userContent }],
+          max_tokens: 1500,
+        },
+      });
+      if (error) throw error;
+
+      let parsed = null;
+      try {
+        parsed = JSON.parse(data.reply.trim().replace(/```json|```/g, '').trim());
+      } catch (parseErr) {
+        parsed = null;
+      }
+
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+        l2Questions = parsed.questions.slice(0, L2_MAX_QUESTIONS);
+        l2Answers = {};
+        buildL2(l2Questions);
+        showScreen('screen-l2');
+      } else if (parsed && Array.isArray(parsed.questions)) {
+        // Valid JSON but the model judged no follow-up was needed -- go
+        // straight to Output, same as if the person had pressed Quick
+        // Response.
+        await generateOutput(false);
+      } else {
+        // The reply was not the expected JSON. Show it to the person as
+        // the response itself rather than surfacing a raw parsing error
+        // (the failure mode first found in Decision 176).
+        renderOutput(data.reply);
+        showScreen('screen-output');
+      }
+    } catch (err) {
+      alert('Something went wrong generating follow-up questions. Please try again.\n\n' + err.message);
+      showScreen('screen-l1');
+    }
+  };
+
+  // Quick Response -- straight from Layer 1 to Output, no adaptive Layer 2.
+  window.quickResponse = async function() {
+    l2Questions = []; l2Answers = {};
+    await generateOutput(false);
+  };
+
+  // Receive Study -- Output after the person has answered Layer 2.
+  window.submitL2 = async function() {
+    await generateOutput(true);
+  };
+
+  // One shared Output call. includeL2 = true builds the LAYER 2 block from
+  // the person's answers; false sends an explicit "skipped" marker so the
+  // Edge Function's prompt knows to work from Layer 1 alone. Either way the
+  // trigger is [GENERATE_OUTPUT], so the session is decremented exactly
+  // once, on success (see study-edge-function.ts).
+  async function generateOutput(includeL2) {
+    showScreen('screen-loading-output');
+
+    let l2Block;
+    if (includeL2) {
+      l2Block = l2Questions.map(q =>
+        'Q: ' + q.text + '\nA: ' + (l2Answers[q.id] || '(not answered)')
+      ).join('\n\n');
+    } else {
+      l2Block = '(Skipped \u2013 the person chose Quick Response, so there are no Layer 2 answers. Work from Layer 1 alone.)';
+    }
+
+    const userContent = '[GENERATE_OUTPUT]\n\n' + buildProfileText() +
+      '\n\nLAYER 1:\n' + buildL1Text() + '\n\nLAYER 2:\n' + l2Block;
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: {
+          messages: [{ role: 'user', content: userContent }],
+          max_tokens: 4000,
+        },
+      });
+      if (error) throw error;
+
+      renderOutput(data.reply);
+      showScreen('screen-output');
+    } catch (err) {
+      alert('Something went wrong generating your response. Please try again.\n\n' + err.message);
+      // Return to wherever the person came from, answers preserved.
+      showScreen(includeL2 ? 'screen-l2' : 'screen-l1');
+    }
+  }
+
+  // Display-only em dash guard (ScriptBDL Decision 188): the platform rule is
+  // en dash, never em dash, in anything a subscriber sees. Model replies are
+  // not always obedient on this, so every piece of model text shown on
+  // screen or printed to PDF passes through here first. The text resent to
+  // the model (crisis-chat history, Layer 2 answers) is deliberately left
+  // untouched -- this changes what is displayed, never what is sent.
+  function enDash(text) {
+    return String(text).replace(/\u2014/g, '\u2013');
+  }
+
+  function renderOutput(text) {
+    document.getElementById('output-body').innerHTML = marked.parse(enDash(text));
+  }
+
+  (async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { showScreen('screen-not-signed-in'); return; }
+
+    const { data, error } = await supabase
+      .from('scriptuverse_profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (error || !data) {
+      showScreen('screen-not-signed-in');
+      return;
+    }
+
+    profile = data;
+    document.getElementById('profileStatus').textContent =
+      'Tradition on file: ' + profile.denomination +
+      (profile.bible_version ? ' \u00b7 ' + profile.bible_version : '');
+
+    buildL1();
+    showScreen('screen-l1');
+  })();
+
+  // ── PREFILL TEST ACCELERATION -- Decision 28 / BIS v1.7 Section 3.8 ─────
+  // Activate with: ?prefill=1
+  // Silently auto-fills Layer 1 and Layer 2, submits both, goes straight to
+  // Output. PERMANENT -- never remove. Only fires when ?prefill=1 is
+  // deliberately in the URL. This exercises the Continue route (Layer 1 ->
+  // Layer 2 -> Output); Quick Response has no prefill route and is tested
+  // by hand.
+  //
+  // Same structure as Counsel's and Joy's block (module script, so buildL2() calls
+  // the __prefillL2Hook itself instead of a window.buildL2 override).
+  // Test content is DELIBERATELY BORING and generic, per Decision 117.
+  (function prefillIfRequested() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('prefill') !== '1') return;
+
+    const PREFILL_L1 = {
+      subject: 'This is a test entry to confirm the intake flow is working correctly.',
+      help: 'Confirming that the flow proceeds correctly to the next screen.',
+      prior: 'Nothing yet \u2013 this is a functional test, not a real submission.',
+    };
+    const PREFILL_L2_ANSWER = 'Testing prefill \u2013 placeholder answer for mechanics testing only.';
+
+    const waitForL1 = setInterval(function() {
+      const firstField = document.getElementById(L1_QUESTIONS[0].id);
+      if (!firstField) return;
+      clearInterval(waitForL1);
+
+      L1_QUESTIONS.forEach(q => {
+        const val = PREFILL_L1[q.id] || 'Prefill test answer.';
+        window.updateL1(q.id, val);
+        const el = document.getElementById(q.id);
+        if (el) el.value = val;
+      });
+
+      window.__prefillL2Hook = function(questions) {
+        questions.forEach(q => {
+          window.updateL2(q.id, PREFILL_L2_ANSWER);
+          const el = document.getElementById('l2_' + q.id);
+          if (el) el.value = PREFILL_L2_ANSWER;
+        });
+        setTimeout(function() { submitL2(); }, 400);
+      };
+
+      setTimeout(function() { submitL1(); }, 400);
+    }, 100);
+  })();
+</script>
+
+</body>
+</html>
