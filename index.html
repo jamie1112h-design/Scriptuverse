@@ -1020,7 +1020,7 @@
       // now a real clickable link into checkout, reusing the same
       // redirectToCheckout() the tile CTA buttons already call below --
       // not a second, separate checkout path.
-      accessStatus.innerHTML = 'Your free sessions are used up \u2014 <a href="#" id="inlineSubscribeLink">subscribe for ' + SUBSCRIBE_PRICE_LABEL + '</a> to keep going.';
+      accessStatus.innerHTML = 'Your free sessions are used up \u2013 <a href="#" id="inlineSubscribeLink">subscribe for ' + SUBSCRIBE_PRICE_LABEL + '</a> to keep going.';
       accessStatus.classList.add('attention');
       const inlineSubscribeLink = document.getElementById('inlineSubscribeLink');
       if (inlineSubscribeLink) {
@@ -1103,7 +1103,7 @@
     if (attempt >= 10) {
       const accessStatus = document.getElementById('accessStatus');
       if (accessStatus) {
-        accessStatus.textContent = 'Payment received \u2014 still finalizing. This can take a little longer than usual; refresh this page in a moment, or check your email for a receipt confirming the charge went through.';
+        accessStatus.textContent = 'Payment received \u2013 still finalizing. This can take a little longer than usual; refresh this page in a moment, or check your email for a receipt confirming the charge went through.';
       }
       return;
     }
@@ -1119,7 +1119,7 @@
     if (checkoutState === 'success') {
       const accessStatus = document.getElementById('accessStatus');
       if (accessStatus) {
-        accessStatus.textContent = 'Payment received \u2014 finalizing your subscription\u2026';
+        accessStatus.textContent = 'Payment received \u2013 finalizing your subscription\u2026';
         accessStatus.classList.add('attention');
       }
       (async () => {
