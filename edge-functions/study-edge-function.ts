@@ -17,8 +17,16 @@
 // Study may cite. Any person may be cited -- Church Fathers, scholars from
 // history, living scholars, anyone from the flagship roster or beyond, with
 // no limit -- provided their position is stated accurately (Decision 14).
+// Revision 3 (2026-09-30, deployed as function version 3): fixes a live
+// failure. Study's first Output run hit Supabase's 150-second request limit:
+// attempt 1 (default high effort, 6000 tokens) came back empty after ~65s
+// because reasoning used the whole budget, and the retry then ran past the
+// limit (logged as "connection closed before message completed"). Fix: Output
+// attempt 1 now runs at medium effort with a 7000-token budget; the retry runs
+// with thinking turned off (documented for claude-sonnet-5) and 6000 tokens;
+// and no retry starts once 85s have elapsed. Prompt text is unchanged.
 // Carried over unchanged from Joy: Shape B identity check, the empty-reply
-// retry ladder (Decision 109), the trial decrement on a successful
+// retry ladder idea (Decision 109, reworked in revision 3), the trial decrement on a successful
 // [GENERATE_OUTPUT] (Decision 180's messages.length === 1 guard included),
 // CORS, and DOCTRINAL_TRIAGE_ADDITION (verbatim). New in Study: a
 // scholarship-register Layer 2 and Output prompt built from the Study
@@ -282,42 +290,58 @@ Deno.serve(async (req) => {
       && typeof messages?.[0]?.content === "string"
       && messages[0].content.startsWith("[GENERATE_OUTPUT]");
 
-    // ── EMPTY-REPLY RETRY LADDER (Decision 109) ───────────────────────────
+    // ── EMPTY-REPLY RETRY LADDER (Decision 109, reworked for Study) ────────
     // Sonnet 5 runs with adaptive thinking ON BY DEFAULT, and max_tokens is
     // a hard cap on TOTAL output -- thinking plus visible text combined. On
     // a demanding turn, thinking can consume the entire budget before any
     // visible text is produced: a real 200 response with an empty reply, not
-    // a thrown error. Retry up to 3 total attempts; only the fallback
-    // attempts (2 and 3) cap effort at "medium" and expand max_tokens --
-    // attempt 1 always runs at the default effort.
-    const RETRY_MAX_TOKENS = [null, 8000, 12000]; // index 0 unused -- attempt 1 uses firstAttemptMaxTokens below
-
-    // Study's Output (maximum depth: several passages, positions, a
-    // Textual Note, named voices) can run well past the 4000 tokens the page
-    // sends, and max_tokens covers adaptive thinking too, so a short cap
-    // could cut a response off mid-sentence without ever tripping the
-    // empty-reply ladder. Output calls therefore get a floor of 6000 on
-    // attempt 1; Layer 2 calls keep whatever the page asks for. The page
-    // itself is unchanged.
-    const OUTPUT_MIN_MAX_TOKENS = 6000;
-    const firstAttemptMaxTokens = isOutputCall
-      ? Math.max(max_tokens || 0, OUTPUT_MIN_MAX_TOKENS)
-      : (max_tokens || 4000);
+    // a thrown error.
+    //
+    // Study's Output is long, and Supabase cuts any request that has not
+    // responded within 150 seconds (504). A full-length attempt takes
+    // roughly 65-85 seconds, so a second full-length attempt cannot fit.
+    // The ladder is therefore built around a time budget:
+    //   - Output attempt 1: medium effort (less reasoning, so the answer is
+    //     not starved), 7000 tokens. The page's own max_tokens is ignored for
+    //     Output calls so the time budget cannot be exceeded from the client.
+    //   - Any retry: thinking turned OFF (thinking: {type: "disabled"} is
+    //     supported on claude-sonnet-5), so the whole budget goes to visible
+    //     text. 6000 tokens for Output; the page's value for Layer 2.
+    //   - No retry starts once RETRY_CUTOFF_MS has elapsed; the person then
+    //     gets a clean error instead of a 504.
+    // Layer 2 calls (short, a few seconds) keep attempt 1 at the default
+    // effort and the page's max_tokens.
+    const OUTPUT_FIRST_MAX_TOKENS = 7000;
+    const OUTPUT_RETRY_MAX_TOKENS = 6000;
+    const RETRY_CUTOFF_MS = 85_000;
     const MAX_ATTEMPTS = 3;
+    const startedAt = Date.now();
 
     let reply = "";
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      if (attempt > 1 && Date.now() - startedAt > RETRY_CUTOFF_MS) {
+        console.error(`[scriptuverse-study] Skipping attempt ${attempt}: ${Date.now() - startedAt}ms elapsed, past the retry cutoff.`);
+        break;
+      }
+
       const createParams = {
         model:      "claude-sonnet-5",
-        max_tokens: attempt === 1 ? firstAttemptMaxTokens : RETRY_MAX_TOKENS[attempt - 1],
+        max_tokens: attempt === 1
+          ? (isOutputCall ? OUTPUT_FIRST_MAX_TOKENS : (max_tokens || 4000))
+          : (isOutputCall ? OUTPUT_RETRY_MAX_TOKENS : (max_tokens || 4000)),
         system:     SYSTEM_PROMPT,
         messages:   messages,
       };
-      // Only fallback attempts cap effort -- attempt 1 uses the API default
-      // (high).
-      if (attempt > 1) {
-        createParams.output_config = { effort: "medium" };
+      if (attempt === 1) {
+        // Output only: medium effort. Layer 2 uses the API default.
+        if (isOutputCall) {
+          createParams.output_config = { effort: "medium" };
+        }
+      } else {
+        // Retry: no thinking, so the budget cannot be consumed before any
+        // visible text is produced.
+        createParams.thinking = { type: "disabled" };
       }
 
       const response = await client.messages.create(createParams);
@@ -331,7 +355,7 @@ Deno.serve(async (req) => {
         break; // got real content -- stop retrying
       }
 
-      console.error(`[scriptuverse-study] Empty reply on attempt ${attempt} of ${MAX_ATTEMPTS}.`);
+      console.error(`[scriptuverse-study] Empty reply on attempt ${attempt} of ${MAX_ATTEMPTS} after ${Date.now() - startedAt}ms.`);
     }
 
     if (reply.trim().length === 0) {
