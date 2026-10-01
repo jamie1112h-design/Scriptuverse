@@ -957,10 +957,10 @@
 
   // ── STRIPE / TRIAL ACCESS GATING ──────────────────────────────────────
   // Per Decision 28: subscription/persistence logic belongs at the suite
-  // front door, not inside each instrument -- Joy, Counsel and Comfort's own
-  // pages carry no paywall screen of their own by design. This is that
-  // gate. Scoped to the three live tiles (Joy, Counsel, Comfort); Study
-  // stays "Coming Soon" until it exists.
+  // front door, not inside each instrument -- Joy, Study, Counsel and
+  // Comfort's own pages carry no paywall screen of their own by design.
+  // This is that gate. Scoped to the four live tiles (Joy, Study, Counsel,
+  // Comfort).
   //
   // REWRITTEN 2026-07-08 to clone HM's actual validated Stripe pattern
   // (HMBDL Decision 25/26, BIS v1.7) instead of the dynamic-Checkout-
@@ -1008,7 +1008,7 @@
     finePrint.classList.toggle('veteran', !stillPitching);
 
     if (profile.subscription_status === 'active') {
-      accessStatus.textContent = 'Subscribed \u00b7 Full Access to Joy, Counsel, and Comfort.';
+      accessStatus.textContent = 'Subscribed \u00b7 Full Access to Joy, Study, Counsel, and Comfort.';
     } else if (granted) {
       const remaining = profile.trial_uses_remaining ?? 0;
       accessStatus.textContent = remaining + (remaining === 1 ? ' Free Session Remaining.' : ' Free Sessions Remaining.');
@@ -1029,6 +1029,7 @@
     }
 
     wireInstrumentTile('tile-cta-joy', 'joy-instrument.html', granted);
+    wireInstrumentTile('tile-cta-study', 'study-instrument.html', granted);
     wireInstrumentTile('tile-cta-counsel', 'counsel-instrument.html', granted);
     wireInstrumentTile('tile-cta-comfort', 'comfort-instrument.html', granted);
   }
@@ -1043,7 +1044,7 @@
       // pattern (BIS Section 3.5), a session is only spent at the moment
       // a real Output is generated, not at the moment someone opens the
       // door. That decrement now lives inside joy-edge-function.ts,
-      // counsel-edge-function.ts and comfort-edge-function.ts themselves, on a successful
+      // study-edge-function.ts, counsel-edge-function.ts and comfort-edge-function.ts themselves, on a successful
       // GENERATE_OUTPUT call, using the already-authenticated Shape B
       // user -- see those files' own notes on this.
       cta.onclick = () => { window.location.href = targetPage; };
@@ -1167,7 +1168,7 @@
       </summary>
       <div class="tile-body">
         <div class="tile-desc">Bring a question, biblical theme, doctrine, or passage you want to understand more deeply. Study examines it with context, interpretation, and scripture grounded in your own tradition.</div>
-        <div class="tile-cta" id="tile-cta-study">Coming Soon</div>
+        <div class="tile-cta" id="tile-cta-study">Enter Study <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
     </details>
 
@@ -1224,7 +1225,7 @@
     <div class="how-step">
       <div class="how-step-number">02</div>
       <div class="how-step-title">Choose an Instrument</div>
-      <div class="how-step-desc">Joy for gratitude, Counsel for a decision, Comfort for grief or fear.</div>
+      <div class="how-step-desc">Joy for gratitude, Study for understanding Scripture, Counsel for a decision, Comfort for grief or fear.</div>
     </div>
     <div class="how-step">
       <div class="how-step-number">03</div>
