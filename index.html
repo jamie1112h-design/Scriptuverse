@@ -249,6 +249,8 @@
     transition: border-color 0.2s;
   }
   .tile[open], .tile:hover { border-color: var(--card-focus); }
+  .coming-soon-divider { display:flex; align-items:center; gap:14px; margin:34px 0 18px; color:var(--text-faint); font-size:12px; letter-spacing:0.14em; text-transform:none; font-weight:600; }
+  .coming-soon-divider::before, .coming-soon-divider::after { content:""; flex:1; border-top:1px solid var(--card-focus); opacity:0.5; }
   .tile.is-pending { opacity: 0.62; }
 
   .tile summary {
@@ -512,14 +514,14 @@
   <p class="hero-line">Receive scripture-anchored counsel based on your own tradition.</p>
   <div class="badge-row">
     <span class="badge badge-tier">Four Instruments</span>
-    <span class="badge badge-tier">5 Free Sessions &middot; No Credit Card</span>
+    <span class="badge badge-tier">2 Free Sessions &middot; No Credit Card</span>
   </div>
 
   <div class="email-cta" id="emailCta">
-    <div class="email-cta-label" id="ctaLabel">Enter your email to begin 5 free sessions</div>
+    <div class="email-cta-label" id="ctaLabel">Enter your email to begin 2 free sessions</div>
     <form class="email-cta-input-row" id="signinForm">
       <input type="email" class="email-input" id="emailInput" placeholder="you@example.com" required autocomplete="email">
-      <button type="submit" class="email-cta-button" id="ctaButton">Start 5 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button type="submit" class="email-cta-button" id="ctaButton">Start 2 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </form>
     <div class="email-cta-fine-print" id="ctaFinePrint">No credit card &middot; No commitment &middot; Access all live instruments</div>
   </div>
@@ -623,7 +625,7 @@
       label.textContent = 'Could not send link: ' + (error.message || 'unknown error') + '.';
       label.classList.add('label-error');
       button.disabled = false;
-      button.innerHTML = 'Start 5 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      button.innerHTML = 'Start 2 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
       console.error('[scriptuverse-auth] signInWithOtp error:', error);
       return;
     }
@@ -647,7 +649,7 @@
   }
 
   function showSignedOut() {
-    label.textContent = 'Enter your email to begin 5 free sessions';
+    label.textContent = 'Enter your email to begin 2 free sessions';
     label.classList.remove('label-error', 'label-attention', 'label-confirmed', 'veteran');
     form.style.display = 'flex';
     finePrint.textContent = 'No credit card \u00b7 No commitment \u00b7 Access all live instruments';
@@ -955,177 +957,42 @@
     showProfileSummary(freshProfile || { denomination, bible_version: selectedVersion });
   });
 
-  // ── STRIPE / TRIAL ACCESS GATING ──────────────────────────────────────
-  // Per Decision 28: subscription/persistence logic belongs at the suite
-  // front door, not inside each instrument -- Joy, Study, Counsel and
-  // Comfort's own pages carry no paywall screen of their own by design.
-  // This is that gate. Scoped to the four live tiles (Joy, Study, Counsel,
-  // Comfort).
-  //
-  // REWRITTEN 2026-07-08 to clone HM's actual validated Stripe pattern
-  // (HMBDL Decision 25/26, BIS v1.7) instead of the dynamic-Checkout-
-  // Session approach this file originally shipped with today. HM's
-  // subscribe button is a static Stripe Payment Link with the trial
-  // token appended as ?client_reference_id=... -- no server round-trip
-  // to create a session first. Scriptuverse does the same, appending the
-  // Supabase user id instead of an anonymous trial token, since Shape B
-  // (Decision 69/72) already gives a real, durable identity to attach.
-  //
-  // REPLACE THIS with the real Payment Link once created in Stripe
-  // Dashboard (Product "Scriptuverse", $9.99/month recurring ->
-  // "Create payment link") -- see stripe-webhook-edge-function.ts's
-  // header for the full Dashboard setup steps, including setting this
-  // link's "After payment" redirect to come back here with ?checkout=success.
-  const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/6oUbJ077Za1yarx5aX0oM00';
-
-  const SUBSCRIBE_PRICE_LABEL = '$9.99/month';
-
-  function hasInstrumentAccess(profile) {
-    return profile.subscription_status === 'active' || (profile.trial_uses_remaining ?? 0) > 0;
-  }
+  // ── ACCESS (QuVive account) ───────────────────────────────────────────
+  // Free sessions and subscriptions are no longer held in this project.
+  // Each instrument function checks the person's QuVive account (same
+  // verified email) before generating and spends a session only after a
+  // whole Output is delivered. This page therefore shows no counts and
+  // carries no payment link; it only tells the person where their plan lives.
+  const QUVIVE_PLANS_URL = 'https://quvive.com/plans.html';
 
   function renderInstrumentAccess(profile) {
     const accessStatus = document.getElementById('accessStatus');
-    if (!accessStatus) return;
-    const granted = hasInstrumentAccess(profile);
-
-    accessStatus.classList.remove('attention', 'confirmed');
-
-    // Shared "still pitching a new/early-trial visitor" check, per
-    // Jamie's rule: true only when trial_uses_remaining > 1 and not yet
-    // subscribed. Drives the value-prop headline's color and, as of this
-    // change, whether the sign-in/tradition lines are bold or recede for
-    // a veteran (subscribed, or down to the last free use) user.
-    const stillPitching = profile.subscription_status !== 'active'
-      && (profile.trial_uses_remaining ?? 0) > 1;
-
+    if (accessStatus) {
+      accessStatus.classList.remove('attention', 'confirmed');
+      accessStatus.innerHTML = 'Your free sessions and subscription are kept in your QuVive account, under this same email. <a href="' + QUVIVE_PLANS_URL + '">Open Your QuVive Account</a>';
+    }
     const valueProp = document.getElementById('valueProp');
-    if (valueProp) {
-      valueProp.classList.toggle('resolved', !stillPitching);
-    }
+    if (valueProp) valueProp.classList.add('resolved');
+    label.classList.add('veteran');
+    finePrint.classList.add('veteran');
 
-    label.classList.toggle('veteran', !stillPitching);
-    finePrint.classList.toggle('veteran', !stillPitching);
-
-    if (profile.subscription_status === 'active') {
-      accessStatus.textContent = 'Subscribed \u00b7 Full Access to Joy, Study, Counsel, and Comfort.';
-    } else if (granted) {
-      const remaining = profile.trial_uses_remaining ?? 0;
-      accessStatus.textContent = remaining + (remaining === 1 ? ' Free Session Remaining.' : ' Free Sessions Remaining.');
-      accessStatus.classList.add('confirmed');
-    } else {
-      // This message is a genuine sentence ("Your free sessions are used
-      // up -- subscribe for $X to keep going"), so it stays sentence case
-      // per Jamie's rule rather than title case. The subscribe portion is
-      // now a real clickable link into checkout, reusing the same
-      // redirectToCheckout() the tile CTA buttons already call below --
-      // not a second, separate checkout path.
-      accessStatus.innerHTML = 'Your free sessions are used up \u2013 <a href="#" id="inlineSubscribeLink">subscribe for ' + SUBSCRIBE_PRICE_LABEL + '</a> to keep going.';
-      accessStatus.classList.add('attention');
-      const inlineSubscribeLink = document.getElementById('inlineSubscribeLink');
-      if (inlineSubscribeLink) {
-        inlineSubscribeLink.onclick = (e) => { e.preventDefault(); redirectToCheckout(); };
-      }
-    }
-
-    wireInstrumentTile('tile-cta-joy', 'joy-instrument.html', granted);
-    wireInstrumentTile('tile-cta-study', 'study-instrument.html', granted);
-    wireInstrumentTile('tile-cta-counsel', 'counsel-instrument.html', granted);
-    wireInstrumentTile('tile-cta-comfort', 'comfort-instrument.html', granted);
+    wireInstrumentTile('tile-cta-joy', 'joy-instrument.html');
+    wireInstrumentTile('tile-cta-study', 'study-instrument.html');
+    wireInstrumentTile('tile-cta-counsel', 'counsel-instrument.html');
+    wireInstrumentTile('tile-cta-prayer', 'prayer-instrument.html');
   }
 
-  function wireInstrumentTile(ctaId, targetPage, granted) {
+  function wireInstrumentTile(ctaId, targetPage) {
     const cta = document.getElementById(ctaId);
     if (!cta) return;
     cta.style.cursor = 'pointer';
-
-    if (granted) {
-      // No client-side decrement here anymore -- per HM's own validated
-      // pattern (BIS Section 3.5), a session is only spent at the moment
-      // a real Output is generated, not at the moment someone opens the
-      // door. That decrement now lives inside joy-edge-function.ts,
-      // study-edge-function.ts, counsel-edge-function.ts and comfort-edge-function.ts themselves, on a successful
-      // GENERATE_OUTPUT call, using the already-authenticated Shape B
-      // user -- see those files' own notes on this.
-      cta.onclick = () => { window.location.href = targetPage; };
-    } else {
-      cta.textContent = 'Subscribe to Continue';
-      cta.onclick = async () => {
-        await redirectToCheckout();
-      };
-    }
+    cta.onclick = () => { window.location.href = targetPage; };
   }
 
-  // Static Payment Link + client_reference_id, exactly mirroring how HM's
-  // Subscribe button appends its trial token to buy.stripe.com/9B66... .
-  // No Edge Function call needed to reach this point -- the Payment Link
-  // itself is the checkout session.
-  async function redirectToCheckout() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const url = STRIPE_PAYMENT_LINK
-      + '?client_reference_id=' + encodeURIComponent(user.id)
-      + '&prefilled_email=' + encodeURIComponent(user.email || '');
-    window.location.href = url;
-  }
-
-  // Handles the return trip from the Stripe Payment Link (once its
-  // "After payment" setting is configured to redirect back here with
-  // ?checkout=success -- see stripe-webhook-edge-function.ts's setup
-  // notes). The webhook that flips subscription_status to 'active' fires
-  // asynchronously and is usually near-instant but not guaranteed to have
-  // landed before this redirect completes.
-  //
-  // FIXED (pre-launch pass): this was originally a single recheck after a
-  // fixed 2-second delay -- fine for a manual test where the webhook has
-  // already landed, but a real risk once real strangers hit checkout under
-  // promotion traffic: if the webhook took longer than 2 seconds, the user
-  // would see stale "still on trial" state until manually refreshing.
-  // Replaced with a genuine polling loop, matching PrecisionSteps'
-  // welcome.html pattern: poll every 1.5 seconds, up to 10 attempts (15
-  // seconds total), stopping as soon as subscription_status flips to
-  // active, with a graceful fallback message if it still hasn't landed
-  // after all attempts (rather than leaving the "finalizing" message up
-  // forever with no explanation).
-  async function pollForActiveSubscription(user, attempt) {
-    attempt = attempt || 1;
-    const { data, error } = await supabase
-      .from('scriptuverse_profiles')
-      .select('subscription_status')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!error && data && data.subscription_status === 'active') {
-      loadProfile(user);
-      return;
-    }
-
-    if (attempt >= 10) {
-      const accessStatus = document.getElementById('accessStatus');
-      if (accessStatus) {
-        accessStatus.textContent = 'Payment received \u2013 still finalizing. This can take a little longer than usual; refresh this page in a moment, or check your email for a receipt confirming the charge went through.';
-      }
-      return;
-    }
-
-    setTimeout(() => pollForActiveSubscription(user, attempt + 1), 1500);
-  }
-
-  (function handleCheckoutReturn() {
-    const params = new URLSearchParams(window.location.search);
-    const checkoutState = params.get('checkout');
-    if (!checkoutState) return;
-    history.replaceState(null, '', window.location.pathname);
-    if (checkoutState === 'success') {
-      const accessStatus = document.getElementById('accessStatus');
-      if (accessStatus) {
-        accessStatus.textContent = 'Payment received \u2013 finalizing your subscription\u2026';
-        accessStatus.classList.add('attention');
-      }
-      (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) pollForActiveSubscription(user);
-      })();
+  // Old Stripe return links (?checkout=...) no longer apply here; tidy the address.
+  (function clearOldCheckoutParam() {
+    if (new URLSearchParams(window.location.search).has('checkout')) {
+      history.replaceState(null, '', window.location.pathname);
     }
   })();
 </script>
@@ -1193,11 +1060,49 @@
       </div>
     </details>
 
-    <!-- COMFORT (formerly Refuge) -->
+    <!-- PRAYER (replaces Comfort on the front door at launch; Comfort's page and function are kept for a later return) -->
     <details class="tile tile-static" open>
       <summary onclick="event.preventDefault();">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-          <path d="M4 20 L4 11 L12 4 L20 11 L20 20 Z M9 20 L9 14 L15 14 L15 20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 3 C12 3 6.5 8.5 6.5 13.5 a5.5 5.5 0 0 0 11 0 C17.5 8.5 12 3 12 3 Z M9 21 L15 21" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Devotion &middot; Seeking</div>
+          <div class="tile-name">Prayer</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <div class="tile-desc">Bring something you want to pray about, or ask how to begin. Prayer draws on Scripture&rsquo;s own prayers and passages, chosen for you and your tradition.</div>
+        <div class="tile-cta" id="tile-cta-prayer">Enter Prayer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </div>
+    </details>
+
+  </div>
+
+  <div class="coming-soon-divider">Coming Soon</div>
+
+  <div class="grid">
+
+    <details class="tile tile-static is-pending" open>
+      <summary onclick="event.preventDefault();">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M12 3 L12 21 M5 10 L12 3 L19 10" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="tile-headline">
+          <div class="tile-eyebrow">Vocation &middot; Purpose</div>
+          <div class="tile-name">Calling</div>
+        </div>
+      </summary>
+      <div class="tile-body">
+        <div class="tile-desc">Come when you are asking what you are here to do. Calling brings forward the scripture on purpose, vocation and the work given to you, in your own tradition.</div>
+        <div class="tile-cta">Coming Soon</div>
+      </div>
+    </details>
+
+    <details class="tile tile-static is-pending" open>
+      <summary onclick="event.preventDefault();">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M12 20 C5 15 3 11 3 8 C3 5 5.5 3.5 8 3.5 C10 3.5 11.5 5 12 6 C12.5 5 14 3.5 16 3.5 C18.5 3.5 21 5 21 8 C21 11 19 15 12 20 Z" stroke-linejoin="round"/>
         </svg>
         <div class="tile-headline">
           <div class="tile-eyebrow">Presence &middot; Solace</div>
@@ -1205,8 +1110,8 @@
         </div>
       </summary>
       <div class="tile-body">
-        <div class="tile-desc">For anxiety, grief, loneliness, or a felt distance from God. Comfort meets you where you are with reassurance, perspective, and scripture suited to what you're carrying.</div>
-        <div class="tile-cta" id="tile-cta-comfort">Enter Comfort <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="tile-desc">Come when you are hurting and need steadiness. Comfort offers scripture that stays with you in sorrow and in the hard hours.</div>
+        <div class="tile-cta">Coming Soon</div>
       </div>
     </details>
 
@@ -1225,7 +1130,7 @@
     <div class="how-step">
       <div class="how-step-number">02</div>
       <div class="how-step-title">Choose an Instrument</div>
-      <div class="how-step-desc">Joy for gratitude, Study for understanding Scripture, Counsel for a decision, Comfort for grief or fear.</div>
+      <div class="how-step-desc">Pick one that speaks to what&rsquo;s happening today.</div>
     </div>
     <div class="how-step">
       <div class="how-step-number">03</div>
