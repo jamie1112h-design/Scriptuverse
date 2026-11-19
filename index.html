@@ -181,6 +181,21 @@
     font-size: 16px; color: var(--text-faint);
     letter-spacing: 0.4px;
   }
+  .signin-link {
+    position: absolute; top: 22px; right: 32px;
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 17px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--accent-deep);
+    background: none; border: 1px solid rgba(176,120,64,0.45);
+    border-radius: 5px; padding: 9px 20px; cursor: pointer;
+  }
+  .signin-link:hover { background: rgba(176,120,64,0.10); }
+  .mode-toggle {
+    display: inline-block; margin-top: 12px;
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 16px; color: var(--accent-deep);
+    background: none; border: none; text-decoration: underline; cursor: pointer;
+  }
   .email-cta-fine-print.fine-print-attention {
     color: var(--blue);
     font-weight: 700;
@@ -508,6 +523,7 @@
 <body>
 
 <section class="hero">
+  <button type="button" class="signin-link" id="signinLink">Sign In</button>
   <div class="wordmark">Script<span class="uv">uv</span>erse</div>
   <p class="value-prop" id="valueProp">Scripture Advisory Instruments for Dimensions of Life.</p>
   <p class="hero-line">Bring a dilemma or a real question for guidance that matters.</p>
@@ -524,6 +540,7 @@
       <button type="submit" class="email-cta-button" id="ctaButton">Start 2 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </form>
     <div class="email-cta-fine-print" id="ctaFinePrint">No credit card &middot; No commitment &middot; Access all live instruments</div>
+    <button type="button" class="mode-toggle" id="modeToggle" style="display:none;">New Here? Start 2 Free Sessions</button>
   </div>
 
   <!-- ── Layer 1 fixed-profile intake (Q4/Q5), per Spec Section 5. Hidden
@@ -587,6 +604,33 @@
   const button = document.getElementById('ctaButton');
   const label = document.getElementById('ctaLabel');
   const finePrint = document.getElementById('ctaFinePrint');
+  const signinLink = document.getElementById('signinLink');
+  const modeToggle = document.getElementById('modeToggle');
+  const ARROW = ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+
+  // Two views of the same email box. "start" is for new people (2 free sessions); "signin" is for anyone returning,
+  // free-session members and subscribers alike. Both send the same verified sign-in link; only the wording differs.
+  let mode = 'start';
+  function setMode(m) {
+    mode = m;
+    label.classList.remove('label-error', 'label-attention');
+    if (m === 'signin') {
+      label.textContent = 'Sign in with your email';
+      button.innerHTML = 'Email Me a Sign-In Link' + ARROW;
+      finePrint.textContent = 'For members and subscribers. No password needed.';
+      modeToggle.style.display = 'inline-block';
+      signinLink.style.display = 'none';
+      input.focus();
+    } else {
+      label.textContent = 'Enter your email to begin 2 free sessions';
+      button.innerHTML = 'Start 2 Free Sessions' + ARROW;
+      finePrint.textContent = 'No credit card \u00b7 No commitment \u00b7 Access all live instruments';
+      modeToggle.style.display = 'none';
+      signinLink.style.display = '';
+    }
+  }
+  signinLink.addEventListener('click', () => setMode('signin'));
+  modeToggle.addEventListener('click', () => setMode('start'));
 
   // Session check on load -- if a magic-link redirect just landed here,
   // or a prior session is still valid, reflect that immediately rather
@@ -625,7 +669,7 @@
       label.textContent = 'Could not send link: ' + (error.message || 'unknown error') + '.';
       label.classList.add('label-error');
       button.disabled = false;
-      button.innerHTML = 'Start 2 Free Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      button.innerHTML = (mode === 'signin' ? 'Email Me a Sign-In Link' : 'Start 2 Free Sessions') + ARROW;
       console.error('[scriptuverse-auth] signInWithOtp error:', error);
       return;
     }
@@ -636,23 +680,25 @@
     label.classList.remove('label-error', 'label-attention');
     label.classList.add('label-attention');
     form.style.display = 'none';
+    modeToggle.style.display = 'none';
     finePrint.textContent = "We've sent a link to " + email + ". No password needed.";
   });
 
   function showSignedIn(session) {
-    label.textContent = "You're signed in as " + session.user.email + ".";
+    label.textContent = "You're signed in as " + session.user.email + ". This also opens your free QuVive account.";
     label.classList.remove('label-error', 'label-attention');
     label.classList.add('label-confirmed');
     form.style.display = 'none';
+    signinLink.style.display = 'none';
+    modeToggle.style.display = 'none';
     finePrint.textContent = 'Setting up your profile...';
     loadProfile(session.user);
   }
 
   function showSignedOut() {
-    label.textContent = 'Enter your email to begin 2 free sessions';
     label.classList.remove('label-error', 'label-attention', 'label-confirmed', 'veteran');
     form.style.display = 'flex';
-    finePrint.textContent = 'No credit card \u00b7 No commitment \u00b7 Access all live instruments';
+    setMode('start');
     finePrint.classList.remove('fine-print-attention', 'fine-print-confirmed', 'veteran');
     document.getElementById('profileIntake').style.display = 'none';
     document.getElementById('valueProp')?.classList.remove('resolved');
