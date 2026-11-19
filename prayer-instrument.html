@@ -47,6 +47,10 @@
   }
   .summary-row input { width: 20px; height: 20px; accent-color: var(--accent-deep); }
   .summary-row label { cursor: pointer; }
+  /* The two buttons under the response are for the screen only; the saved PDF is the response alone. */
+  @media print {
+    #screen-output .btn-row { display: none !important; }
+  }
   .output-date {
     font-family: 'Google Sans', Arial, sans-serif;
     font-size: 15px; color: var(--text-faint); letter-spacing: 0.5px;
@@ -121,7 +125,7 @@
       <label for="summary-l2">Include a Brief Summary of My Answers at the End</label>
     </div>
     <div class="btn-row">
-      <button class="btn-primary" id="btn-l2-next" onclick="submitL2()" disabled>Receive Prayer &rarr;</button>
+      <button class="btn-primary" id="btn-l2-next" onclick="submitL2()" disabled>Gather Scripture for Prayer &rarr;</button>
     </div>
   </div>
 
