@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prayer &ndash; Scriptuverse</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<link rel="stylesheet" href="scriptuverse-shared.css">
+<style>
+  /* Prayer-specific additions only. Colors, header, hero, buttons, cards,
+     progress bar, loading state and output rendering all come from
+     scriptuverse-shared.css (same look as Joy and Counsel, no accent
+     override) -- do not re-add copies of those rules here.
+
+     Three things below are new to Prayer because Prayer's Layer 1 is the
+     first in the suite with choice questions: the choice list, the summary
+     checkbox row, and the output date line. */
+  .btn-row {
+    display: flex; gap: 14px;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .quick-note {
+    text-align: center;
+    margin-top: 14px; margin-bottom: 0;
+  }
+  .choice-list { display: flex; flex-direction: column; gap: 10px; }
+  .choice {
+    font-family: 'PT Serif', serif; font-size: 17px; color: var(--ink);
+    text-align: left;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(155,120,65,0.25);
+    border-radius: 6px;
+    padding: 13px 16px;
+    cursor: pointer;
+  }
+  .choice:hover { border-color: var(--card-focus); }
+  .choice.selected {
+    border-color: var(--accent-deep);
+    background: rgba(176,120,64,0.12);
+    font-weight: 700;
+  }
+  .summary-row {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 22px;
+    font-family: 'PT Serif', serif; font-size: 17px; color: var(--text-mid);
+  }
+  .summary-row input { width: 20px; height: 20px; accent-color: var(--accent-deep); }
+  .summary-row label { cursor: pointer; }
+  .output-date {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 15px; color: var(--text-faint); letter-spacing: 0.5px;
+    margin-bottom: 18px;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">SCRIPTUVERSE</a>
+  <div class="suite-label">Prayer</div>
+</header>
+
+<div class="hero">
+  <div class="instrument-name">Prayer</div>
+  <div class="instrument-tagline">Tailored Prayer Guidance for You &ndash; Drawn from Scripture.</div>
+</div>
+
+<main class="main">
+
+  <div id="screen-not-signed-in" class="screen">
+    <div class="disclaimer-box">You need to sign in and complete your tradition profile at the Scriptuverse front door before using Prayer.</div>
+    <div class="btn-row"><a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Go to Front Door</a></div>
+  </div>
+
+  <div id="screen-l1" class="screen">
+
+    <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
+
+    <div class="status-line" id="profileStatus"></div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Where You're Starting</span><span id="l1-counter">0 / 4</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="l1-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="action-label">Please provide your answers to these questions.</div>
+
+    <div id="l1-questions"></div>
+
+    <div class="summary-row">
+      <input type="checkbox" id="summary-l1" onchange="window.setSummary(this.checked)">
+      <label for="summary-l1">Include a Brief Summary of My Answers at the End</label>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-l1-next" onclick="submitL1()" disabled>Continue &rarr;</button>
+      <button class="btn-primary" id="btn-l1-quick" onclick="quickResponse()" disabled>Quick Response</button>
+    </div>
+    <div class="q-hint quick-note">Quick Response skips the follow-up questions and goes straight to your response.</div>
+
+    <div class="footer-identifier">SCRIPTUVERSE &middot; Prayer</div>
+  </div>
+
+  <div id="screen-loading-l2" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Reading What You've Shared</div>
+      <div class="loading-sub">Listening for what matters to you&hellip;</div>
+    </div>
+  </div>
+
+  <div id="screen-l2" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-label"><span>A Couple More Questions</span><span id="l2-counter">0 / 0</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="l2-bar" style="width:0%"></div></div>
+    </div>
+    <div id="l2-questions"></div>
+    <div class="summary-row">
+      <input type="checkbox" id="summary-l2" onchange="window.setSummary(this.checked)">
+      <label for="summary-l2">Include a Brief Summary of My Answers at the End</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-l2-next" onclick="submitL2()" disabled>Receive Prayer &rarr;</button>
+    </div>
+  </div>
+
+  <div id="screen-loading-output" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Gathering Scripture for You</div>
+      <div class="loading-sub">Looking to scripture &middot; Forming a response&hellip;</div>
+    </div>
+  </div>
+
+  <div id="screen-output" class="screen">
+    <div class="output-body" id="output-body"></div>
+    <hr class="section-divider">
+    <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="window.print()">Download PDF</button>
+      <a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Bring Another Question &ndash; Return to Instrument Selections &rarr;</a>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://xvlqixdhxvsjcowjmxyl.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_CyR3UVVvOtrFziL4nI9mtA_3x2g4JgS';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Prayer's Layer 1 is four short questions: three choices and one
+  // free-text description. Prayer carries no crisis handling of any kind,
+  // by Jamie's explicit instruction (the same posture as Joy and Study).
+  // Prayer never asks the model to compose a prayer -- the output quotes
+  // Scripture and explains; see the Edge Function's prompt when built.
+  const L1_QUESTIONS = [
+    {
+      id: 'mode',
+      type: 'choice',
+      label: 'Prayer Choices',
+      text: 'What Brings You to Prayer Today?',
+      options: [
+        'Pray About Something Specific',
+        'Find Prayers from Scripture',
+        'Learn How to Pray for a Situation'
+      ]
+    },
+    {
+      id: 'situation',
+      type: 'text',
+      label: 'The Situation',
+      text: 'Please Describe the Situation You Would Like to Pray About.',
+      hint: 'A few sentences is plenty.'
+    },
+    {
+      id: 'for_whom',
+      type: 'choice',
+      label: 'Who It’s For',
+      text: 'Who Is This Prayer For?',
+      options: [
+        'Myself',
+        'Someone I Love',
+        'A Group, Community, or Situation'
+      ]
+    },
+    {
+      id: 'how',
+      type: 'choice',
+      label: 'How You’ll Pray',
+      text: 'How Will You Pray?',
+      options: [
+        'On My Own, Quietly',
+        'Aloud',
+        'With Others',
+        'With Someone Else in Mind'
+      ]
+    },
+  ];
+
+  // Layer 2 is capped at two questions in code as well as in the Edge
+  // Function's prompt. The model chooses the questions; nothing steers them.
+  const L2_MAX_QUESTIONS = 2;
+
+  let profile = null;
+  let l1Answers = {};
+  let l2Questions = [];
+  let l2Answers = {};
+  let includeSummary = false;
+
+  const EDGE_FUNCTION_NAME = 'prayer';
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function buildProfileText() {
+    return 'FIXED PROFILE:\nDenomination: ' + (profile.denomination || 'Not specified') +
+      (profile.denomination_note ? ' (' + profile.denomination_note + ')' : '') +
+      '\nBible version: ' + (profile.bible_version || 'KJV');
+  }
+
+  function buildL1Text() {
+    return L1_QUESTIONS.map(q =>
+      q.text + '\n' + (l1Answers[q.id] || '(not answered)')
+    ).join('\n\n');
+  }
+
+  function buildL1() {
+    const container = document.getElementById('l1-questions');
+    container.innerHTML = '';
+    L1_QUESTIONS.forEach(q => {
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      const num = document.createElement('div');
+      num.className = 'q-number'; num.textContent = q.label;
+      const txt = document.createElement('div');
+      txt.className = 'q-text'; txt.textContent = q.text;
+      card.appendChild(num); card.appendChild(txt);
+
+      if (q.type === 'choice') {
+        const list = document.createElement('div');
+        list.className = 'choice-list';
+        list.setAttribute('role', 'radiogroup');
+        q.options.forEach(opt => {
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'choice';
+          b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
+          b.textContent = opt;
+          b.addEventListener('click', () => {
+            list.querySelectorAll('.choice').forEach(x => {
+              x.classList.remove('selected'); x.setAttribute('aria-checked', 'false');
+            });
+            b.classList.add('selected'); b.setAttribute('aria-checked', 'true');
+            window.updateL1(q.id, opt);
+          });
+          list.appendChild(b);
+        });
+        card.appendChild(list);
+      } else {
+        const hint = document.createElement('div');
+        hint.className = 'q-hint'; hint.textContent = q.hint;
+        const ta = document.createElement('textarea');
+        ta.id = q.id; ta.rows = 4; ta.placeholder = 'Your answer…';
+        ta.addEventListener('input', () => window.updateL1(q.id, ta.value));
+        card.appendChild(hint); card.appendChild(ta);
+      }
+      container.appendChild(card);
+    });
+  }
+
+  window.updateL1 = function(id, value) {
+    if (value.trim()) { l1Answers[id] = value.trim(); } else { delete l1Answers[id]; }
+    const count = Object.keys(l1Answers).length;
+    const complete = count >= L1_QUESTIONS.length;
+    document.getElementById('l1-counter').textContent = count + ' / ' + L1_QUESTIONS.length;
+    document.getElementById('l1-bar').style.width = (count / L1_QUESTIONS.length * 100) + '%';
+    document.getElementById('btn-l1-next').disabled = !complete;
+    document.getElementById('btn-l1-quick').disabled = !complete;
+  };
+
+  // One shared summary choice, shown beside both final submit routes
+  // (Quick Response on Layer 1, and the last button on Layer 2).
+  window.setSummary = function(checked) {
+    includeSummary = !!checked;
+    document.getElementById('summary-l1').checked = includeSummary;
+    document.getElementById('summary-l2').checked = includeSummary;
+  };
+
+  function buildL2(questions) {
+    const container = document.getElementById('l2-questions');
+    container.innerHTML = '';
+    questions.forEach((q, i) => {
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.innerHTML = `
+        <div class="q-number">Going Deeper &middot; ${i + 1}</div>
+        <div class="q-text"></div>
+        <textarea id="l2_${q.id}" placeholder="Your answer…" rows="3" oninput="window.updateL2('${q.id}', this.value)"></textarea>
+      `;
+      card.querySelector('.q-text').textContent = enDash(q.text);
+      container.appendChild(card);
+    });
+    document.getElementById('l2-counter').textContent = '0 / ' + questions.length;
+    if (window.__prefillL2Hook) window.__prefillL2Hook(questions);
+  }
+
+  window.updateL2 = function(id, value) {
+    if (value.trim()) { l2Answers[id] = value.trim(); } else { delete l2Answers[id]; }
+    const count = Object.keys(l2Answers).length;
+    document.getElementById('l2-counter').textContent = count + ' / ' + l2Questions.length;
+    document.getElementById('l2-bar').style.width = (count / l2Questions.length * 100) + '%';
+    document.getElementById('btn-l2-next').disabled = count < 1;
+  };
+
+  // Continue -- Layer 1 -> adaptive Layer 2 -> Output.
+  window.submitL1 = async function() {
+    showScreen('screen-loading-l2');
+    const userContent = '[GENERATE_LAYER2]\n\n' + buildProfileText() + '\n\n' + buildL1Text();
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: {
+          messages: [{ role: 'user', content: userContent }],
+          max_tokens: 1500,
+        },
+      });
+      if (error) throw error;
+
+      let parsed = null;
+      try {
+        parsed = JSON.parse(data.reply.trim().replace(/```json|```/g, '').trim());
+      } catch (parseErr) {
+        parsed = null;
+      }
+
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+        l2Questions = parsed.questions.slice(0, L2_MAX_QUESTIONS);
+        l2Answers = {};
+        buildL2(l2Questions);
+        showScreen('screen-l2');
+      } else if (parsed && Array.isArray(parsed.questions)) {
+        // The model judged no follow-up was needed -- straight to Output.
+        await generateOutput(false);
+      } else {
+        // Unexpected reply: show it as the response rather than a raw error.
+        renderOutput(data.reply);
+        showScreen('screen-output');
+      }
+    } catch (err) {
+      alert('Something went wrong generating follow-up questions. Please try again.\n\n' + err.message);
+      showScreen('screen-l1');
+    }
+  };
+
+  // Quick Response -- straight from Layer 1 to Output.
+  window.quickResponse = async function() {
+    l2Questions = []; l2Answers = {};
+    await generateOutput(false);
+  };
+
+  window.submitL2 = async function() {
+    await generateOutput(true);
+  };
+
+  async function generateOutput(includeL2) {
+    showScreen('screen-loading-output');
+
+    let l2Block;
+    if (includeL2) {
+      l2Block = l2Questions.map(q =>
+        'Q: ' + q.text + '\nA: ' + (l2Answers[q.id] || '(not answered)')
+      ).join('\n\n');
+    } else {
+      l2Block = '(Skipped – the person chose Quick Response, or no follow-up was needed, so there are no Layer 2 answers. Work from Layer 1 alone.)';
+    }
+
+    const userContent = '[GENERATE_OUTPUT]\n\n' + buildProfileText() +
+      '\n\nLAYER 1:\n' + buildL1Text() + '\n\nLAYER 2:\n' + l2Block;
+
+    try {
+      const { data, error } = await supabase.functions.invoke(EDGE_FUNCTION_NAME, {
+        body: {
+          messages: [{ role: 'user', content: userContent }],
+          max_tokens: 4000,
+        },
+      });
+      if (error) throw error;
+
+      renderOutput(data.reply);
+      showScreen('screen-output');
+
+      // Summary hook. includeSummary records the person's opt-in. The
+      // summary itself is written by a separate, cheaper call that does not
+      // exist yet (backend step, after the HTML is agreed); until it does,
+      // this is a deliberate no-op.
+      if (includeSummary && typeof window.renderSummary === 'function') {
+        window.renderSummary({ l1: l1Answers, l2Questions, l2Answers });
+      }
+    } catch (err) {
+      alert('Something went wrong generating your response. Please try again.\n\n' + err.message);
+      showScreen(includeL2 ? 'screen-l2' : 'screen-l1');
+    }
+  }
+
+  // Display-only em dash guard: en dash, never em dash, in anything a
+  // subscriber sees. Changes what is displayed, never what is sent.
+  function enDash(text) {
+    return String(text).replace(/—/g, '–');
+  }
+
+  function renderOutput(text) {
+    const body = document.getElementById('output-body');
+    body.innerHTML = '';
+    // The date lets a person tell one saved PDF from another.
+    const d = document.createElement('div');
+    d.className = 'output-date';
+    d.textContent = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+    body.appendChild(d);
+    const content = document.createElement('div');
+    content.innerHTML = marked.parse(enDash(text));
+    body.appendChild(content);
+  }
+
+  (async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { showScreen('screen-not-signed-in'); return; }
+
+    const { data, error } = await supabase
+      .from('scriptuverse_profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (error || !data) {
+      showScreen('screen-not-signed-in');
+      return;
+    }
+
+    profile = data;
+    document.getElementById('profileStatus').textContent =
+      'Tradition on file: ' + profile.denomination +
+      (profile.bible_version ? ' · ' + profile.bible_version : '');
+
+    buildL1();
+    showScreen('screen-l1');
+  })();
+
+  // ── PREFILL TEST ACCELERATION -- same convention as the other instruments.
+  // Activate with ?prefill=1. Fills Layer 1 and Layer 2, submits both, goes
+  // to Output. Test content is deliberately boring and generic.
+  (function prefillIfRequested() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('prefill') !== '1') return;
+
+    const PREFILL_L1 = {
+      mode: L1_QUESTIONS[0].options[0],
+      situation: 'This is a test entry to confirm the intake flow is working correctly.',
+      for_whom: L1_QUESTIONS[2].options[0],
+      how: L1_QUESTIONS[3].options[0],
+    };
+    const PREFILL_L2_ANSWER = 'Testing prefill – placeholder answer for mechanics testing only.';
+
+    const waitForL1 = setInterval(function() {
+      const firstField = document.getElementById('situation');
+      if (!firstField) return;
+      clearInterval(waitForL1);
+
+      L1_QUESTIONS.forEach(q => {
+        const val = PREFILL_L1[q.id];
+        window.updateL1(q.id, val);
+        if (q.type === 'text') { document.getElementById(q.id).value = val; }
+      });
+
+      window.__prefillL2Hook = function(questions) {
+        questions.forEach(q => {
+          window.updateL2(q.id, PREFILL_L2_ANSWER);
+          const el = document.getElementById('l2_' + q.id);
+          if (el) el.value = PREFILL_L2_ANSWER;
+        });
+        setTimeout(function() { submitL2(); }, 400);
+      };
+
+      setTimeout(function() { submitL1(); }, 400);
+    }, 100);
+  })();
+</script>
+
+</body>
+</html>
