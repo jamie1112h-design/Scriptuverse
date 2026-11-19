@@ -962,15 +962,8 @@
   // Each instrument function checks the person's QuVive account (same
   // verified email) before generating and spends a session only after a
   // whole Output is delivered. This page therefore shows no counts and
-  // carries no payment link; it only tells the person where their plan lives.
-  const QUVIVE_PLANS_URL = 'https://quvive.com/plans.html';
-
+  // carries no payment link. Refusals are explained on the instrument page at the moment they happen.
   function renderInstrumentAccess(profile) {
-    const accessStatus = document.getElementById('accessStatus');
-    if (accessStatus) {
-      accessStatus.classList.remove('attention', 'confirmed');
-      accessStatus.innerHTML = 'Your free sessions and subscription are kept in your QuVive account, under this same email. <a href="' + QUVIVE_PLANS_URL + '">Open Your QuVive Account</a>';
-    }
     const valueProp = document.getElementById('valueProp');
     if (valueProp) valueProp.classList.add('resolved');
     label.classList.add('veteran');
@@ -999,8 +992,6 @@
 
 
 <main class="main">
-
-  <div class="status-line" id="accessStatus"></div>
 
   <div class="grid top">
 
