@@ -47,6 +47,13 @@
   }
   .summary-row input { width: 20px; height: 20px; accent-color: var(--accent-deep); }
   .summary-row label { cursor: pointer; }
+  .answers-summary {
+    margin-top: 36px; padding-top: 24px;
+    border-top: 1px solid rgba(0,0,0,0.18);
+  }
+  .answers-summary p { margin-bottom: 14px; }
+  .summary-pending { font-style: italic; color: var(--text-mid); }
+  @media print { .summary-pending { display: none !important; } }
   /* The two buttons under the response are for the screen only; the saved PDF is the response alone. */
   @media print {
     #screen-output .btn-row { display: none !important; }
@@ -426,13 +433,7 @@
       renderOutput(data.reply);
       showScreen('screen-output');
 
-      // Summary hook. includeSummary records the person's opt-in. The
-      // summary itself is written by a separate, cheaper call that does not
-      // exist yet (backend step, after the HTML is agreed); until it does,
-      // this is a deliberate no-op.
-      if (includeSummary && typeof window.renderSummary === 'function') {
-        window.renderSummary({ l1: l1Answers, l2Questions, l2Answers });
-      }
+      addSummary();
     } catch (err) {
       await showFailure(err, includeL2 ? 'screen-l2' : 'screen-l1');
     }
@@ -440,6 +441,50 @@
 
   // Display-only em dash guard: en dash, never em dash, in anything a
   // subscriber sees. Changes what is displayed, never what is sent.
+
+  // ── OPTIONAL SUMMARY OF THE PERSON'S ANSWERS ────────────────────────────
+  // Written only when the person ticked the checkbox beside the final submit. It is a separate, small call
+  // (brief-summary) made AFTER the brief is on screen; it never spends a session. If it fails for any reason the
+  // brief stays exactly as it is and nothing is shown. The summary sits at the end of the brief, so it prints in the PDF.
+  function buildAnswersText() {
+    const parts = [];
+    L1_QUESTIONS.forEach(function(q) {
+      if (l1Answers[q.id]) parts.push('Q: ' + q.text + '\nA: ' + l1Answers[q.id]);
+    });
+    l2Questions.forEach(function(q) {
+      if (l2Answers[q.id]) parts.push('Q: ' + q.text + '\nA: ' + l2Answers[q.id]);
+    });
+    return parts.join('\n\n');
+  }
+
+  async function addSummary() {
+    if (!includeSummary) return;
+    const body = document.getElementById('output-body');
+    const sec = document.createElement('div');
+    sec.className = 'answers-summary summary-pending';
+    sec.textContent = 'Writing your summary\u2026';
+    body.appendChild(sec);
+    try {
+      const { data, error } = await supabase.functions.invoke('brief-summary', {
+        body: { instrument: 'Prayer', answers: buildAnswersText() },
+      });
+      const text = (data && typeof data.summary === 'string') ? enDash(data.summary).trim() : '';
+      if (error || !text) throw new Error('no summary');
+      sec.className = 'answers-summary';
+      sec.innerHTML = '';
+      const h = document.createElement('h2');
+      h.textContent = 'Summary of Your Answers';
+      sec.appendChild(h);
+      text.split(/\n{2,}/).forEach(function(para) {
+        const p = document.createElement('p');
+        p.textContent = para.trim();
+        if (p.textContent) sec.appendChild(p);
+      });
+    } catch (e) {
+      sec.remove();
+    }
+  }
+
   function enDash(text) {
     return String(text).replace(/—/g, '–');
   }
