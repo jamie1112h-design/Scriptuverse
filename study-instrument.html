@@ -47,6 +47,14 @@
     <div class="btn-row"><a class="btn-primary" href="index.html" style="text-decoration:none; display:inline-block;">Go to Front Door</a></div>
   </div>
 
+  <div id="screen-notice" class="screen">
+    <div class="disclaimer-box" id="notice-text"></div>
+    <div class="btn-row" style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+      <a class="btn-primary" id="notice-account" href="https://quvive.com/plans.html" style="text-decoration:none; display:none;">Open Your QuVive Account</a>
+      <button type="button" class="btn-primary" id="notice-back">Go Back</button>
+    </div>
+  </div>
+
   <div id="screen-l1" class="screen">
 
     <div class="disclaimer-box">This is a space for wisdom reflection, drawing on scripture and Christian tradition. It is not a substitute for pastoral counsel, professional therapy, or guidance from a priest, pastor, or trusted spiritual director in your own life.</div>
@@ -170,6 +178,26 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // Shows a failed call as an in-page notice. A refusal from the plan check
+  // (403) carries the function's own wording and a link to the QuVive account;
+  // anything else gets a plain retry message.
+  async function showFailure(err, backScreen) {
+    let text = 'Something didn\u2019t come through on our end. Please try again.';
+    let showAccount = false;
+    try {
+      const res = err && err.context;
+      if (res && typeof res.json === 'function') {
+        const body = await res.json();
+        if (body && body.error) text = body.error;
+        showAccount = res.status === 403;
+      }
+    } catch (e) { /* keep the plain message */ }
+    document.getElementById('notice-text').textContent = text;
+    document.getElementById('notice-account').style.display = showAccount ? 'inline-block' : 'none';
+    document.getElementById('notice-back').onclick = () => showScreen(backScreen);
+    showScreen('screen-notice');
+  }
+
   function buildProfileText() {
     return 'FIXED PROFILE:\nDenomination: ' + (profile.denomination || 'Not specified') +
       (profile.denomination_note ? ' (' + profile.denomination_note + ')' : '') +
@@ -278,8 +306,7 @@
         showScreen('screen-output');
       }
     } catch (err) {
-      alert('Something went wrong generating follow-up questions. Please try again.\n\n' + err.message);
-      showScreen('screen-l1');
+      await showFailure(err, 'screen-l1');
     }
   };
 
@@ -326,9 +353,8 @@
       renderOutput(data.reply);
       showScreen('screen-output');
     } catch (err) {
-      alert('Something went wrong generating your response. Please try again.\n\n' + err.message);
       // Return to wherever the person came from, answers preserved.
-      showScreen(includeL2 ? 'screen-l2' : 'screen-l1');
+      await showFailure(err, includeL2 ? 'screen-l2' : 'screen-l1');
     }
   }
 
